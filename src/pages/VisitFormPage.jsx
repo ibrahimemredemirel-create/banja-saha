@@ -1,0 +1,576 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useData } from '../context/DataContext';
+import { Save, Smartphone, Trash2, Calendar, User, FileSpreadsheet, Upload, Search, X, Edit } from 'lucide-react';
+import { downloadEmptyVisitTemplate, parseExcelVisits, sortVisitsLatestFirst, formatDateDisplay, normalizeDateToISO } from '../utils/excelExport';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+const KONTAK_UNVANLAR = ['İŞLETME SAHİBİ', 'İŞLETMECİ', 'ANTRENÖR', 'ÇALIŞAN'];
+const ZIYARET_SEBEPLERI = ['GÖRÜŞME', 'KEŞİF', 'KURULUM'];
+const ZIYARET_SONUCLARI = [
+  'GÖRÜŞME DEVAM EDİYOR',
+  'TEKLİF VERİLDİ',
+  'TEKLİF VERİLECEK',
+  'TEKLİF VERİLMEDİ',
+  'OLUMSUZ'
+];
+
+const formatPhoneInput = (val) => {
+  const digits = val.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 7) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
+  return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 9)} ${digits.slice(9, 11)}`;
+};
+
+const VisitFormPage = () => {
+  const { facilities, visits, addVisit, updateVisit, bulkAddVisits, deleteVisit, employees } = useData();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const fileInputRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  const [editingVisitId, setEditingVisitId] = useState(null);
+  const [facilitySearch, setFacilitySearch] = useState('');
+  const [showFacilityDropdown, setShowFacilityDropdown] = useState(false);
+
+  const [formData, setFormData] = useState({
+    ziyaretTarihi: new Date().toISOString().split('T')[0],
+    ziyaretEden: '',
+    facilityId: '',
+    ziyaretSebebi: '',
+    kontakKisi: '',
+    kontakUnvan: '',
+    telefon: '',
+    eposta: '',
+    ziyaretSonucu: '',
+    aciklama: ''
+  });
+
+  // Tesis Bazlı Rapordan "Düzenle" ile gelindiyse formu doldur
+  useEffect(() => {
+    const incomingVisit = location.state?.visit;
+    if (incomingVisit) {
+      const matchedFac =
+        location.state?.facility ||
+        facilities.find(f => f.id === incomingVisit.facilityId);
+      setEditingVisitId(incomingVisit.id);
+      setFacilitySearch(matchedFac?.tesis || incomingVisit.tesisAdi || '');
+      setFormData({
+        ziyaretTarihi: normalizeDateToISO(incomingVisit.ziyaretTarihi),
+        ziyaretEden: incomingVisit.ziyaretEden || '',
+        facilityId: incomingVisit.facilityId || '',
+        ziyaretSebebi: incomingVisit.ziyaretSebebi || '',
+        kontakKisi: incomingVisit.kontakKisi || '',
+        kontakUnvan: incomingVisit.kontakUnvan || '',
+        telefon: incomingVisit.telefon || '',
+        eposta: incomingVisit.eposta || '',
+        ziyaretSonucu: incomingVisit.ziyaretSonucu || '',
+        aciklama: incomingVisit.aciklama || ''
+      });
+    }
+  }, [location.state, facilities]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowFacilityDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const matchingFacilities = facilities.filter(f => {
+    const q = facilitySearch.trim().toLocaleLowerCase('tr-TR');
+    if (!q) return true;
+    const name = (f.tesis || '').toLocaleLowerCase('tr-TR');
+    const city = (f.il || '').toLocaleLowerCase('tr-TR');
+    return name.includes(q) || city.includes(q);
+  });
+
+  const handleFacilitySearchChange = (e) => {
+    const val = e.target.value;
+    setFacilitySearch(val);
+    setShowFacilityDropdown(true);
+
+    if (!val.trim()) {
+      setFormData(prev => ({ ...prev, facilityId: '' }));
+    } else {
+      const currentSelected = facilities.find(f => f.id === formData.facilityId);
+      if (currentSelected && currentSelected.tesis !== val) {
+        setFormData(prev => ({ ...prev, facilityId: '' }));
+      }
+    }
+  };
+
+  const handleSelectFacility = (selectedFac) => {
+    setFacilitySearch(selectedFac.tesis || '');
+    setShowFacilityDropdown(false);
+    setFormData(prev => ({
+      ...prev,
+      facilityId: selectedFac.id,
+      kontakKisi: editingVisitId ? prev.kontakKisi : (selectedFac?.kontakKisi || prev.kontakKisi),
+      kontakUnvan: editingVisitId ? prev.kontakUnvan : (selectedFac?.kontakUnvan || prev.kontakUnvan),
+      telefon: editingVisitId ? prev.telefon : (selectedFac?.telefon || prev.telefon),
+      eposta: editingVisitId ? prev.eposta : (selectedFac?.eposta || prev.eposta)
+    }));
+  };
+
+  const handleClearFacilitySearch = () => {
+    setFacilitySearch('');
+    setFormData(prev => ({ ...prev, facilityId: '' }));
+    setShowFacilityDropdown(false);
+  };
+
+  const handleExcelVisitUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const { matchedVisits, unmatchedFacilities } = await parseExcelVisits(file, facilities);
+      if (matchedVisits.length === 0) {
+        if (unmatchedFacilities.length > 0) {
+          alert(`Yüklenen ziyaretlerdeki tesisler sistemde kayıtlı tesislerle eşleşmedi (${unmatchedFacilities.slice(0, 5).join(', ')}). Lütfen önce Tesis Kayıt şablonunu yüklediğinizden emin olun.`);
+        } else {
+          alert('Yüklenen Excel dosyasında geçerli ziyaret satırı bulunamadı.');
+        }
+        return;
+      }
+      bulkAddVisits(matchedVisits);
+      let msg = `${matchedVisits.length} adet ziyaret kaydı Excel'den tek seferde başarıyla eklendi!`;
+      if (unmatchedFacilities.length > 0) {
+        msg += `\n\nNot: Sistemde bulunamayan ${unmatchedFacilities.length} tesis satırı atlandı: ${unmatchedFacilities.slice(0, 5).join(', ')}`;
+      }
+      alert(msg);
+    } catch (err) {
+      alert('Ziyaret Excel dosyası okunurken bir hata oluştu: ' + err.message);
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'telefon') {
+      setFormData(prev => ({ ...prev, telefon: formatPhoneInput(value) }));
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.facilityId) {
+      alert('Lütfen arama kutusundan ziyaret edilen tesisi seçiniz!');
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      ziyaretTarihi: formData.ziyaretTarihi || 'Belirtilmedi'
+    };
+
+    if (editingVisitId) {
+      updateVisit(editingVisitId, payload);
+      alert('Ziyaret kaydı başarıyla güncellendi!');
+      const targetFacId = formData.facilityId;
+      setEditingVisitId(null);
+      if (location.state?.visit) {
+        navigate('/facility-report', { state: { selectedFacilityId: targetFacId } });
+        return;
+      }
+    } else {
+      addVisit(payload);
+      alert('Ziyaret kaydı başarıyla eklendi!');
+    }
+
+    setFacilitySearch('');
+    setShowFacilityDropdown(false);
+    setFormData({
+      ziyaretTarihi: new Date().toISOString().split('T')[0],
+      ziyaretEden: '',
+      facilityId: '',
+      ziyaretSebebi: '',
+      kontakKisi: '',
+      kontakUnvan: '',
+      telefon: '',
+      eposta: '',
+      ziyaretSonucu: '',
+      aciklama: ''
+    });
+  };
+
+  const handleLoadVisitForEdit = (v) => {
+    const fac = facilities.find(f => f.id === v.facilityId);
+    setEditingVisitId(v.id);
+    setFacilitySearch(fac?.tesis || v.tesisAdi || '');
+    setFormData({
+      ziyaretTarihi: normalizeDateToISO(v.ziyaretTarihi),
+      ziyaretEden: v.ziyaretEden || '',
+      facilityId: v.facilityId || '',
+      ziyaretSebebi: v.ziyaretSebebi || '',
+      kontakKisi: v.kontakKisi || '',
+      kontakUnvan: v.kontakUnvan || '',
+      telefon: v.telefon || '',
+      eposta: v.eposta || '',
+      ziyaretSonucu: v.ziyaretSonucu || '',
+      aciklama: v.aciklama || ''
+    });
+  };
+
+  const selectedFacilityVisits = sortVisitsLatestFirst(
+    visits.filter(v => v.facilityId === formData.facilityId)
+  );
+
+  return (
+    <div>
+      <form className="form-card" onSubmit={handleSubmit}>
+        <div className="header-flex" style={{ marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div>
+            <span className="section-label">SAHA ZİYARET GİRİŞİ</span>
+            <h2 style={{ margin: 0, fontSize: '1.15rem' }}>
+              {editingVisitId ? 'Ziyaret Kaydını Düzenle' : 'Yeni Ziyaret Kayıt Formu'}
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              style={{ display: 'none' }}
+              onChange={handleExcelVisitUpload}
+            />
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => downloadEmptyVisitTemplate(facilities)}
+              title="Ziyaret girişi için boş Excel şablonunu indir"
+            >
+              <FileSpreadsheet size={16} />
+              Boş Ziyaret Şablonu
+            </button>
+            <button
+              type="button"
+              className="btn btn-lime"
+              onClick={() => fileInputRef.current?.click()}
+              title="Doldurduğunuz ziyaret Excel dosyasını tek seferde yükleyin"
+            >
+              <Upload size={16} />
+              Excel'den Toplu Yükle
+            </button>
+            <button className="btn btn-primary" type="submit">
+              <Save size={16} />
+              {editingVisitId ? 'Değişiklikleri Kaydet' : 'Ziyareti Kaydet'}
+            </button>
+          </div>
+        </div>
+
+        <div className="banja-gradient-line">
+          <div className="banja-gradient-fill" style={{ width: '100%' }} />
+        </div>
+
+        <div className="form-grid">
+          {/* 1. ZİYARET TARİHİ */}
+          <div className="form-group">
+            <label>ZİYARET TARİHİ</label>
+            <input
+              type="date"
+              className="form-control"
+              name="ziyaretTarihi"
+              value={formData.ziyaretTarihi}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* 2. ZİYARET EDEN (SAHA ÇALIŞANI) */}
+          <div className="form-group">
+            <label>SAHA ÇALIŞANI (ZİYARET EDEN)</label>
+            <select
+              className="form-control"
+              name="ziyaretEden"
+              value={formData.ziyaretEden}
+              onChange={handleChange}
+            >
+              <option value="">Seçiniz...</option>
+              {employees.map(emp => (
+                <option key={emp.id} value={emp.name}>{emp.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. TESİS (ARAMA ÇUBUĞU) */}
+          <div className="form-group" ref={dropdownRef} style={{ position: 'relative' }}>
+            <label>TESİS (ARA / SEÇİNİZ)</label>
+            <div style={{ position: 'relative' }}>
+              <Search
+                size={15}
+                style={{
+                  position: 'absolute',
+                  left: '0.85rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-muted)',
+                  pointerEvents: 'none'
+                }}
+              />
+              <input
+                type="text"
+                className="form-control"
+                value={facilitySearch}
+                onFocus={() => setShowFacilityDropdown(true)}
+                onChange={handleFacilitySearchChange}
+                placeholder="Tesis adı yazarak arayın..."
+                style={{ width: '100%', paddingLeft: '2.35rem', paddingRight: '2.2rem' }}
+                required
+              />
+              {facilitySearch && (
+                <button
+                  type="button"
+                  onClick={handleClearFacilitySearch}
+                  style={{
+                    position: 'absolute',
+                    right: '0.65rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title="Temizle"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            {showFacilityDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                marginTop: '0.3rem',
+                maxHeight: '220px',
+                overflowY: 'auto',
+                backgroundColor: '#0c1821',
+                border: '1px solid var(--primary-color)',
+                borderRadius: '10px',
+                boxShadow: '0 12px 32px rgba(0, 0, 0, 0.7)',
+                zIndex: 100
+              }}>
+                {matchingFacilities.length === 0 ? (
+                  <div style={{ padding: '0.8rem 1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Eşleşen tesis bulunamadı.
+                  </div>
+                ) : (
+                  matchingFacilities.map(f => {
+                    const isActive = f.id === formData.facilityId;
+                    return (
+                      <div
+                        key={f.id}
+                        onClick={() => handleSelectFacility(f)}
+                        style={{
+                          padding: '0.7rem 0.9rem',
+                          fontSize: '0.86rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--border-subtle)',
+                          backgroundColor: isActive ? 'rgba(0, 210, 255, 0.15)' : 'transparent',
+                          color: isActive ? 'var(--primary-color)' : 'var(--text-main)',
+                          fontWeight: isActive ? 700 : 500
+                        }}
+                      >
+                        {f.tesis}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 4. ZİYARET SEBEBİ */}
+          <div className="form-group">
+            <label>ZİYARET SEBEBİ</label>
+            <select
+              className="form-control"
+              name="ziyaretSebebi"
+              value={formData.ziyaretSebebi}
+              onChange={handleChange}
+            >
+              <option value="">Seçiniz...</option>
+              {ZIYARET_SEBEPLERI.map(sebep => (
+                <option key={sebep} value={sebep}>{sebep}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 5. KONTAK KİŞİ */}
+          <div className="form-group">
+            <label>KONTAK KİŞİ</label>
+            <input
+              type="text"
+              className="form-control"
+              name="kontakKisi"
+              value={formData.kontakKisi}
+              onChange={handleChange}
+              placeholder="Görüşülen yetkili adı soyadı"
+            />
+          </div>
+
+          {/* 6. KONTAK UNVAN */}
+          <div className="form-group">
+            <label>KONTAK UNVAN</label>
+            <select
+              className="form-control"
+              name="kontakUnvan"
+              value={formData.kontakUnvan}
+              onChange={handleChange}
+            >
+              <option value="">Seçiniz...</option>
+              {KONTAK_UNVANLAR.map(u => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 7. TELEFON */}
+          <div className="form-group">
+            <label>TELEFON</label>
+            <input
+              type="tel"
+              inputMode="numeric"
+              className="form-control"
+              name="telefon"
+              value={formData.telefon}
+              onChange={handleChange}
+              placeholder="05XX XXX XX XX"
+            />
+          </div>
+
+          {/* 8. E POSTA */}
+          <div className="form-group">
+            <label>E POSTA</label>
+            <input
+              type="email"
+              className="form-control"
+              name="eposta"
+              value={formData.eposta}
+              onChange={handleChange}
+              placeholder="ornek@tesis.com"
+            />
+          </div>
+
+          {/* 9. ZİYARET SONUCU */}
+          <div className="form-group">
+            <label>ZİYARET SONUCU</label>
+            <select
+              className="form-control"
+              name="ziyaretSonucu"
+              value={formData.ziyaretSonucu}
+              onChange={handleChange}
+            >
+              <option value="">Seçiniz...</option>
+              {ZIYARET_SONUCLARI.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* 10. AÇIKLAMA */}
+        <div className="form-group" style={{ marginTop: '1.25rem' }}>
+          <label>AÇIKLAMA</label>
+          <textarea
+            className="form-control"
+            name="aciklama"
+            value={formData.aciklama}
+            onChange={handleChange}
+            placeholder="Ziyaret notlarını giriniz..."
+            rows={4}
+          />
+        </div>
+
+        <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn btn-primary" type="submit">
+            <Save size={16} />
+            {editingVisitId ? 'Değişiklikleri Kaydet' : 'Ziyareti Kaydet'}
+          </button>
+        </div>
+      </form>
+
+      {/* Seçili Tesise Ait Ziyaret Geçmişi */}
+      {formData.facilityId && (
+        <div className="dashboard-card">
+          <span className="section-label">SEÇİLİ TESİS ZİYARETLERİ ({selectedFacilityVisits.length})</span>
+          {selectedFacilityVisits.length === 0 ? (
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+              Bu tesise ait önceki ziyaret kaydı bulunmuyor.
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.85rem', marginTop: '0.85rem' }}>
+              {selectedFacilityVisits.map(v => (
+                <div
+                  key={v.id}
+                  style={{
+                    backgroundColor: '#081015',
+                    border: v.id === editingVisitId ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
+                    borderRadius: '10px',
+                    padding: '0.85rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary-color)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Calendar size={14} /> {formatDateDisplay(v.ziyaretTarihi)}
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleLoadVisitForEdit(v)}
+                        style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer' }}
+                        title="Ziyareti Düzenle"
+                      >
+                        <Edit size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteVisit(v.id)}
+                        style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}
+                        title="Ziyareti Sil"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <User size={13} /> {v.ziyaretEden} • {v.kontakKisi} {v.kontakUnvan ? `(${v.kontakUnvan})` : ''}
+                  </div>
+                  {(v.ziyaretSebebi || v.ziyaretSonucu) && (
+                    <div style={{ marginBottom: '0.4rem', display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                      {v.ziyaretSebebi && (
+                        <span className="badge badge-neutral" style={{ fontSize: '0.72rem' }}>{v.ziyaretSebebi}</span>
+                      )}
+                      {v.ziyaretSonucu && (
+                        <span className="badge badge-warning" style={{ fontSize: '0.72rem' }}>{v.ziyaretSonucu}</span>
+                      )}
+                    </div>
+                  )}
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-main)' }}>
+                    {v.aciklama}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default VisitFormPage;
