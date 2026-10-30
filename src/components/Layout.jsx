@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -7,7 +7,8 @@ import {
   FileBarChart2,
   Smartphone,
   Settings,
-  LogOut
+  LogOut,
+  Download
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
@@ -40,6 +41,23 @@ export const BanjaIconSmall = () => (
 
 const Layout = () => {
   const { logout, cloudStatus } = useData();
+  const [installPrompt, setInstallPrompt] = useState(() => window.__deferredPwaPrompt || null);
+
+  useEffect(() => {
+    const onAvailable = () => setInstallPrompt(window.__deferredPwaPrompt || null);
+    window.addEventListener('pwa-install-available', onAvailable);
+    return () => window.removeEventListener('pwa-install-available', onAvailable);
+  }, []);
+
+  const handleInstallApp = async () => {
+    const promptEvent = installPrompt || window.__deferredPwaPrompt;
+    if (!promptEvent) return;
+    promptEvent.prompt();
+    await promptEvent.userChoice;
+    window.__deferredPwaPrompt = null;
+    setInstallPrompt(null);
+  };
+
   return (
     <div className="app-container">
       <div className="sidebar">
@@ -127,6 +145,27 @@ const Layout = () => {
           <Settings size={18} />
           Ayarlar
         </NavLink>
+
+        {installPrompt && (
+          <button
+            type="button"
+            onClick={handleInstallApp}
+            className="sidebar-link"
+            style={{
+              background: 'rgba(182, 255, 0, 0.14)',
+              borderColor: 'rgba(182, 255, 0, 0.45)',
+              color: 'var(--accent-lime)',
+              cursor: 'pointer',
+              fontWeight: 700,
+              width: '100%',
+              textAlign: 'left'
+            }}
+            title="Tam ekran mobil uygulama olarak yükle"
+          >
+            <Download size={18} />
+            Uygulamayı Yükle
+          </button>
+        )}
 
         <button
           type="button"
