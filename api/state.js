@@ -152,7 +152,7 @@ export default async function handler(req, res) {
 
       if (action === 'login') {
         const inputPass = String(body.password || '').trim();
-        if (inputPass === currentPassword) {
+        if (inputPass.toLocaleLowerCase('tr-TR') === String(currentPassword).trim().toLocaleLowerCase('tr-TR')) {
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ ok: true }));

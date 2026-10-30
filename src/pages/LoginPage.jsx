@@ -77,6 +77,9 @@ const LoginPage = () => {
                 }}
                 placeholder="Şifrenizi giriniz..."
                 style={{ width: '100%', paddingRight: '2.6rem', fontSize: '0.95rem' }}
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="current-password"
                 autoFocus
               />
               <button

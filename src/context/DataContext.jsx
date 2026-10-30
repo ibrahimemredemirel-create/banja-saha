@@ -137,7 +137,7 @@ export const DataProvider = ({ children }) => {
       return { ok: false, error: res.error || 'Hatalı şifre!' };
     } catch {
       // Çevrimdışı yedek kontrol
-      if (String(password).trim() === 'banja2026') {
+      if (String(password).trim().toLocaleLowerCase('tr-TR') === 'banja2026') {
         setIsAuthenticated(true);
         localStorage.setItem(AUTH_KEY, 'true');
         return { ok: true };
