@@ -234,7 +234,8 @@ export const DataProvider = ({ children }) => {
     const newEmpNames = Array.from(
       new Set(
         visitItems
-          .map(v => (v.ziyaretEden || '').trim().toLocaleUpperCase('tr-TR'))
+          .flatMap(v => String(v.ziyaretEden || '').split(/\s*(?:&|,|\+)\s*/))
+          .map(s => s.trim().toLocaleUpperCase('tr-TR'))
           .filter(Boolean)
       )
     );

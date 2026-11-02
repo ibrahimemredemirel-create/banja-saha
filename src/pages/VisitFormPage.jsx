@@ -1,8 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { Save, Smartphone, Trash2, Calendar, User, FileSpreadsheet, Upload, Search, X, Edit } from 'lucide-react';
+import { Save, Smartphone, Trash2, Calendar, User, FileSpreadsheet, Upload, Search, X, Edit, Check, ChevronDown } from 'lucide-react';
 import { downloadEmptyVisitTemplate, parseExcelVisits, sortVisitsLatestFirst, formatDateDisplay, normalizeDateToISO } from '../utils/excelExport';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+const parseSelectedEmployeeList = (val) => {
+  if (!val) return [];
+  return String(val)
+    .split(/\s*(?:&|,|\+)\s*/)
+    .map(s => s.trim())
+    .filter(Boolean);
+};
 
 const KONTAK_UNVANLAR = ['İŞLETME SAHİBİ', 'İŞLETMECİ', 'ANTRENÖR', 'ÇALIŞAN'];
 const ZIYARET_SEBEPLERI = ['GÖRÜŞME', 'KEŞİF', 'KURULUM'];
@@ -29,10 +37,12 @@ const VisitFormPage = () => {
 
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
+  const empDropdownRef = useRef(null);
 
   const [editingVisitId, setEditingVisitId] = useState(null);
   const [facilitySearch, setFacilitySearch] = useState('');
   const [showFacilityDropdown, setShowFacilityDropdown] = useState(false);
+  const [showEmpDropdown, setShowEmpDropdown] = useState(false);
 
   const [formData, setFormData] = useState({
     ziyaretTarihi: new Date().toISOString().split('T')[0],
@@ -76,10 +86,42 @@ const VisitFormPage = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowFacilityDropdown(false);
       }
+      if (empDropdownRef.current && !empDropdownRef.current.contains(e.target)) {
+        setShowEmpDropdown(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const individualEmployees = React.useMemo(() => {
+    const seen = new Set();
+    const list = [];
+    employees.forEach(emp => {
+      parseSelectedEmployeeList(emp.name).forEach(part => {
+        const key = part.toLocaleUpperCase('tr-TR');
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push(key);
+        }
+      });
+    });
+    return list;
+  }, [employees]);
+
+  const selectedEmpList = parseSelectedEmployeeList(formData.ziyaretEden);
+
+  const handleToggleEmployee = (empName) => {
+    const current = parseSelectedEmployeeList(formData.ziyaretEden);
+    const exists = current.some(n => n.toLocaleUpperCase('tr-TR') === empName.toLocaleUpperCase('tr-TR'));
+    const next = exists
+      ? current.filter(n => n.toLocaleUpperCase('tr-TR') !== empName.toLocaleUpperCase('tr-TR'))
+      : [...current, empName];
+    setFormData(prev => ({
+      ...prev,
+      ziyaretEden: next.join(' & ')
+    }));
+  };
 
   const matchingFacilities = facilities.filter(f => {
     const q = facilitySearch.trim().toLocaleLowerCase('tr-TR');
@@ -188,6 +230,7 @@ const VisitFormPage = () => {
 
     setFacilitySearch('');
     setShowFacilityDropdown(false);
+    setShowEmpDropdown(false);
     setFormData({
       ziyaretTarihi: new Date().toISOString().split('T')[0],
       ziyaretEden: '',
@@ -285,20 +328,92 @@ const VisitFormPage = () => {
             />
           </div>
 
-          {/* 2. ZİYARET EDEN (SAHA ÇALIŞANI) */}
-          <div className="form-group">
-            <label>SAHA ÇALIŞANI (ZİYARET EDEN)</label>
-            <select
+          {/* 2. ZİYARET EDEN (SAHA ÇALIŞANI - ÇOKLU SEÇİM) */}
+          <div className="form-group" ref={empDropdownRef} style={{ position: 'relative' }}>
+            <label>SAHA ÇALIŞANI (ZİYARET EDEN - ÇOKLU SEÇİM)</label>
+            <button
+              type="button"
               className="form-control"
-              name="ziyaretEden"
-              value={formData.ziyaretEden}
-              onChange={handleChange}
+              onClick={() => setShowEmpDropdown(prev => !prev)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                textAlign: 'left',
+                cursor: 'pointer',
+                color: selectedEmpList.length > 0 ? 'var(--text-main)' : '#4b6073'
+              }}
             >
-              <option value="">Seçiniz...</option>
-              {employees.map(emp => (
-                <option key={emp.id} value={emp.name}>{emp.name}</option>
-              ))}
-            </select>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {selectedEmpList.length > 0 ? selectedEmpList.join(' & ') : 'Seçiniz...'}
+              </span>
+              <ChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+            </button>
+
+            {showEmpDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                marginTop: '0.3rem',
+                maxHeight: '220px',
+                overflowY: 'auto',
+                backgroundColor: '#0c1821',
+                border: '1px solid var(--primary-color)',
+                borderRadius: '10px',
+                boxShadow: '0 12px 32px rgba(0, 0, 0, 0.7)',
+                zIndex: 110,
+                padding: '0.35rem'
+              }}>
+                {individualEmployees.length === 0 ? (
+                  <div style={{ padding: '0.7rem 0.85rem', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                    Kayıtlı saha çalışanı bulunamadı.
+                  </div>
+                ) : (
+                  individualEmployees.map(empName => {
+                    const isChecked = selectedEmpList.some(
+                      n => n.toLocaleUpperCase('tr-TR') === empName.toLocaleUpperCase('tr-TR')
+                    );
+                    return (
+                      <div
+                        key={empName}
+                        onClick={() => handleToggleEmployee(empName)}
+                        style={{
+                          padding: '0.6rem 0.8rem',
+                          borderRadius: '7px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          backgroundColor: isChecked ? 'rgba(0, 210, 255, 0.15)' : 'transparent',
+                          color: isChecked ? 'var(--primary-color)' : 'var(--text-main)',
+                          fontWeight: isChecked ? 700 : 500,
+                          fontSize: '0.86rem',
+                          marginBottom: '0.15rem'
+                        }}
+                      >
+                        <span>{empName}</span>
+                        <div style={{
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '4px',
+                          border: isChecked ? '1px solid var(--primary-color)' : '1px solid #334e62',
+                          backgroundColor: isChecked ? 'var(--primary-color)' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          {isChecked && <Check size={13} color="#051014" strokeWidth={3} />}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
 
           {/* 3. TESİS (ARAMA ÇUBUĞU) */}
