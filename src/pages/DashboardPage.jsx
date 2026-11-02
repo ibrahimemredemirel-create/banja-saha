@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
-import { List, X, ExternalLink, Calendar, Check, ChevronDown } from 'lucide-react';
+import { List, X, ExternalLink, Calendar, Check, ChevronDown, RotateCcw } from 'lucide-react';
 import { getEffectiveToplamKort, sortVisitsLatestFirst, formatDateDisplay, normalizeDateToISO } from '../utils/excelExport';
 import { useNavigate } from 'react-router-dom';
 
@@ -483,6 +483,29 @@ const DashboardPage = () => {
                   {registeredCities.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
+
+              {/* FİLTRELERİ TEMİZLE BUTONU */}
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => {
+                  setSelectedCity('');
+                  setSelectedMonths([]);
+                  setShowMonthDropdown(false);
+                }}
+                style={{
+                  padding: '0.45rem 0.85rem',
+                  fontSize: '0.78rem',
+                  whiteSpace: 'nowrap',
+                  opacity: (selectedCity || selectedMonths.length > 0) ? 1 : 0.65,
+                  borderColor: (selectedCity || selectedMonths.length > 0) ? 'var(--primary-color)' : undefined,
+                  color: (selectedCity || selectedMonths.length > 0) ? 'var(--primary-color)' : undefined
+                }}
+                title="Zaman ve İl filtrelerini sıfırla"
+              >
+                <RotateCcw size={14} />
+                Temizle
+              </button>
             </div>
           </div>
 
