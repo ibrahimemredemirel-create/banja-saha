@@ -79,6 +79,35 @@ const DashboardPage = () => {
   const gorusmeDevamCount = gorusmeDevamVisits.length;
   const olumsuzCount = olumsuzVisits.length;
 
+  const teklifVerildiFacilityCount = new Set(teklifVerildiVisits.map(v => v.facilityId)).size;
+  const teklifVerilmediFacilityCount = new Set(teklifVerilmediVisits.map(v => v.facilityId)).size;
+  const gorusmeDevamFacilityCount = new Set(gorusmeDevamVisits.map(v => v.facilityId)).size;
+  const olumsuzFacilityCount = new Set(olumsuzVisits.map(v => v.facilityId)).size;
+
+  // Ziyaret listesini tesislere göre grupla
+  const groupVisitsByFacility = (visitItems = []) => {
+    const map = new Map();
+    visitItems.forEach(v => {
+      const fac = facilities.find(f => f.id === v.facilityId);
+      const key = v.facilityId || v.tesisAdi || v.id;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          facility: fac || null,
+          tesisAdi: fac?.tesis || v.tesisAdi || 'Bilinmeyen Tesis',
+          il: fac?.il || '-',
+          ilce: fac?.ilce || '',
+          visits: []
+        });
+      }
+      map.get(key).visits.push(v);
+    });
+    return Array.from(map.values()).map(group => ({
+      ...group,
+      visits: sortVisitsLatestFirst(group.visits)
+    }));
+  };
+
   const visitCoveragePercent = kayitliTesisSayisi > 0
     ? Math.min(100, Math.round((ziyaretEdilenTesisSayisi / kayitliTesisSayisi) * 100))
     : 0;
@@ -259,22 +288,50 @@ const DashboardPage = () => {
           <div className="stats-grid" style={{ marginBottom: 0, gridTemplateColumns: 'repeat(4, 1fr)' }}>
             <div className="stat-card" style={{ backgroundColor: '#0a161d', borderLeft: '3px solid #00d2ff' }}>
               {renderCardHeader('TEKLİF VERİLDİ', 'TEKLIF_VERILDI')}
-              <span className="stat-value" style={{ color: '#00d2ff' }}>{teklifVerildiCount}</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: '#00d2ff' }}>{teklifVerildiCount}</span>
+                {teklifVerildiCount > 0 && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    ({teklifVerildiFacilityCount} Tesis)
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="stat-card" style={{ backgroundColor: '#0a161d', borderLeft: '3px solid #b6ff00' }}>
               {renderCardHeader('TEKLİF VERİLMEDİ / VERİLECEK', 'TEKLIF_VERILMEDI')}
-              <span className="stat-value" style={{ color: '#b6ff00' }}>{teklifVerilmediCount}</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: '#b6ff00' }}>{teklifVerilmediCount}</span>
+                {teklifVerilmediCount > 0 && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    ({teklifVerilmediFacilityCount} Tesis)
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="stat-card" style={{ backgroundColor: '#0a161d', borderLeft: '3px solid #38bdf8' }}>
               {renderCardHeader('GÖRÜŞME DEVAM EDİYOR', 'GORUSME_DEVAM')}
-              <span className="stat-value" style={{ color: '#38bdf8' }}>{gorusmeDevamCount}</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: '#38bdf8' }}>{gorusmeDevamCount}</span>
+                {gorusmeDevamCount > 0 && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    ({gorusmeDevamFacilityCount} Tesis)
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="stat-card" style={{ backgroundColor: '#0a161d', borderLeft: '3px solid #f87171' }}>
               {renderCardHeader('OLUMSUZ', 'OLUMSUZ')}
-              <span className="stat-value" style={{ color: '#f87171' }}>{olumsuzCount}</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: '#f87171' }}>{olumsuzCount}</span>
+                {olumsuzCount > 0 && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    ({olumsuzFacilityCount} Tesis)
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -325,7 +382,9 @@ const DashboardPage = () => {
                   {selectedCity ? `${selectedCity} FİLTRESİ AKTİF` : 'DETAYLI KAYIT LİSTESİ'}
                 </span>
                 <h3 style={{ margin: 0, fontSize: '1.05rem' }}>
-                  {activeModal.title} ({activeModal.items.length})
+                  {activeModal.type === 'visit'
+                    ? `${activeModal.title} (${groupVisitsByFacility(activeModal.items).length} Tesis / ${activeModal.items.length} Görüşme)`
+                    : `${activeModal.title} (${activeModal.items.length})`}
                 </h3>
               </div>
 
@@ -453,61 +512,108 @@ const DashboardPage = () => {
                   </table>
                 </div>
               ) : (
-                <div className="table-container" style={{ overflowX: 'hidden' }}>
-                  <table style={{ width: '100%', whiteSpace: 'normal', tableLayout: 'fixed' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ width: '20%', padding: '0.65rem 0.6rem', fontSize: '0.76rem' }}>TESİS ADI</th>
-                        <th style={{ width: '8%', padding: '0.65rem 0.4rem', fontSize: '0.76rem' }}>İL</th>
-                        <th style={{ width: '10%', padding: '0.65rem 0.4rem', fontSize: '0.76rem' }}>TARİH</th>
-                        <th style={{ width: '9%', padding: '0.65rem 0.4rem', fontSize: '0.76rem' }}>EKİP</th>
-                        <th style={{ width: '9%', padding: '0.65rem 0.4rem', fontSize: '0.76rem' }}>SEBEP</th>
-                        <th style={{ width: '10%', padding: '0.65rem 0.4rem', fontSize: '0.76rem' }}>KONTAK</th>
-                        <th style={{ width: '13%', padding: '0.65rem 0.4rem', fontSize: '0.76rem' }}>SONUÇ</th>
-                        <th style={{ width: '14%', padding: '0.65rem 0.5rem', fontSize: '0.76rem' }}>AÇIKLAMA</th>
-                        <th style={{ width: '7%', padding: '0.65rem 0.4rem', fontSize: '0.76rem', textAlign: 'right' }}>DETAY</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activeModal.items.map(v => {
-                        const fac = facilities.find(f => f.id === v.facilityId);
-                        return (
-                          <tr key={v.id}>
-                            <td style={{ fontWeight: 700, color: 'var(--primary-color)', padding: '0.6rem', fontSize: '0.81rem', wordBreak: 'break-word' }}>
-                              {fac?.tesis || v.tesisAdi || '-'}
-                            </td>
-                            <td style={{ padding: '0.6rem 0.4rem', fontSize: '0.79rem' }}>{fac?.il || '-'}</td>
-                            <td style={{ padding: '0.6rem 0.4rem', fontSize: '0.79rem' }}>{formatDateDisplay(v.ziyaretTarihi)}</td>
-                            <td style={{ padding: '0.6rem 0.4rem' }}>
-                              <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>{v.ziyaretEden || '-'}</span>
-                            </td>
-                            <td style={{ padding: '0.6rem 0.4rem', fontSize: '0.78rem' }}>{v.ziyaretSebebi || '-'}</td>
-                            <td style={{ padding: '0.6rem 0.4rem', fontSize: '0.79rem', wordBreak: 'break-word' }}>{v.kontakKisi || '-'}</td>
-                            <td style={{ padding: '0.6rem 0.4rem' }}>
-                              {v.ziyaretSonucu ? (
-                                <span className={`badge ${v.ziyaretSonucu === 'TEKLİF VERİLDİ' ? 'badge-success' : v.ziyaretSonucu === 'OLUMSUZ' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '0.68rem', whiteSpace: 'normal', textAlign: 'center' }}>
-                                  {v.ziyaretSonucu}
-                                </span>
-                              ) : '-'}
-                            </td>
-                            <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.79rem', wordBreak: 'break-word' }}>{v.aciklama || '-'}</td>
-                            <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right' }}>
-                              {fac && (
-                                <button
-                                  type="button"
-                                  className="btn btn-outline"
-                                  style={{ padding: '0.25rem 0.45rem', fontSize: '0.72rem' }}
-                                  onClick={() => navigate('/facility-report', { state: { selectedFacilityId: fac.id } })}
-                                >
-                                  <ExternalLink size={12} /> Rapor
-                                </button>
-                              )}
-                            </td>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {groupVisitsByFacility(activeModal.items).map((group, groupIdx) => (
+                    <div
+                      key={group.key}
+                      style={{
+                        border: '1px solid var(--border-color)',
+                        borderLeft: '3px solid var(--primary-color)',
+                        borderRadius: '10px',
+                        backgroundColor: '#0b161e',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {/* Tesis Grup Başlığı */}
+                      <div style={{
+                        padding: '0.7rem 1rem',
+                        backgroundColor: '#0f202b',
+                        borderBottom: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '0.75rem'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                          <span style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: 'var(--text-muted)',
+                            backgroundColor: '#091319',
+                            padding: '0.2rem 0.55rem',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-subtle)'
+                          }}>
+                            #{groupIdx + 1}
+                          </span>
+                          <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--primary-color)' }}>
+                            {group.tesisAdi}
+                          </span>
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            ({group.il}{group.ilce ? ` / ${group.ilce}` : ''})
+                          </span>
+                          <span className="badge badge-success" style={{ fontSize: '0.72rem' }}>
+                            {group.visits.length} Görüşme
+                          </span>
+                        </div>
+
+                        {group.facility && (
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            style={{ padding: '0.28rem 0.65rem', fontSize: '0.74rem' }}
+                            onClick={() => navigate('/facility-report', { state: { selectedFacilityId: group.facility.id } })}
+                          >
+                            <ExternalLink size={12} /> Tesis Raporu
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Tesise Ait Yapılan Görüşmeler Tablosu */}
+                      <table style={{ width: '100%', whiteSpace: 'normal', tableLayout: 'fixed' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ width: '13%', padding: '0.5rem 0.75rem', fontSize: '0.73rem' }}>TARİH</th>
+                            <th style={{ width: '11%', padding: '0.5rem 0.5rem', fontSize: '0.73rem' }}>EKİP</th>
+                            <th style={{ width: '12%', padding: '0.5rem 0.5rem', fontSize: '0.73rem' }}>SEBEP</th>
+                            <th style={{ width: '16%', padding: '0.5rem 0.5rem', fontSize: '0.73rem' }}>KONTAK KİŞİ</th>
+                            <th style={{ width: '18%', padding: '0.5rem 0.5rem', fontSize: '0.73rem' }}>SONUÇ</th>
+                            <th style={{ width: '30%', padding: '0.5rem 0.75rem', fontSize: '0.73rem' }}>AÇIKLAMA</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody>
+                          {group.visits.map(v => (
+                            <tr key={v.id}>
+                              <td style={{ padding: '0.55rem 0.75rem', fontSize: '0.8rem', fontWeight: 600 }}>
+                                {formatDateDisplay(v.ziyaretTarihi)}
+                              </td>
+                              <td style={{ padding: '0.55rem 0.5rem' }}>
+                                <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>{v.ziyaretEden || '-'}</span>
+                              </td>
+                              <td style={{ padding: '0.55rem 0.5rem', fontSize: '0.78rem' }}>
+                                {v.ziyaretSebebi || '-'}
+                              </td>
+                              <td style={{ padding: '0.55rem 0.5rem', fontSize: '0.79rem', wordBreak: 'break-word' }}>
+                                {v.kontakKisi || '-'}
+                                {v.kontakUnvan ? <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}> ({v.kontakUnvan})</span> : ''}
+                              </td>
+                              <td style={{ padding: '0.55rem 0.5rem' }}>
+                                {v.ziyaretSonucu ? (
+                                  <span className={`badge ${v.ziyaretSonucu === 'TEKLİF VERİLDİ' ? 'badge-success' : v.ziyaretSonucu === 'OLUMSUZ' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '0.68rem', whiteSpace: 'normal', textAlign: 'center' }}>
+                                    {v.ziyaretSonucu}
+                                  </span>
+                                ) : '-'}
+                              </td>
+                              <td style={{ padding: '0.55rem 0.75rem', fontSize: '0.8rem', wordBreak: 'break-word' }}>
+                                {v.aciklama || '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
