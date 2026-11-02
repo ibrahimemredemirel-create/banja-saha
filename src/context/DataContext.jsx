@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { normalizeKategori } from '../utils/excelExport';
 
 const DataContext = createContext();
 
@@ -13,6 +14,20 @@ const FACILITIES_KEY = 'banja_saha_facilities_v4';
 const VISITS_KEY = 'banja_saha_visits_v4';
 const EMPLOYEES_KEY = 'banja_saha_employees_v3';
 const AUTH_KEY = 'banja_saha_auth_v1';
+
+const cleanFacilitiesList = (list) => {
+  if (!Array.isArray(list)) return { cleaned: [], changed: false };
+  let changed = false;
+  const cleaned = list.map(f => {
+    const norm = normalizeKategori(f.kategori);
+    if (norm !== (f.kategori || '')) {
+      changed = true;
+      return { ...f, kategori: norm };
+    }
+    return f;
+  });
+  return { cleaned, changed };
+};
 
 async function apiRequest(method = 'GET', payload = null) {
   const options = {
@@ -44,7 +59,8 @@ export const DataProvider = ({ children }) => {
 
   const [facilities, setFacilities] = useState(() => {
     const saved = localStorage.getItem(FACILITIES_KEY);
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    return cleanFacilitiesList(parsed).cleaned;
   });
 
   const [visits, setVisits] = useState(() => {
@@ -73,7 +89,8 @@ export const DataProvider = ({ children }) => {
     try {
       const res = await apiRequest('GET');
       if (res.ok) {
-        const localFac = JSON.parse(localStorage.getItem(FACILITIES_KEY) || '[]');
+        const localFacRaw = JSON.parse(localStorage.getItem(FACILITIES_KEY) || '[]');
+        const { cleaned: localFac } = cleanFacilitiesList(localFacRaw);
         const localVis = JSON.parse(localStorage.getItem(VISITS_KEY) || '[]');
         const localEmp = JSON.parse(localStorage.getItem(EMPLOYEES_KEY) || '[]');
 
@@ -85,14 +102,25 @@ export const DataProvider = ({ children }) => {
             visits: localVis,
             employees: localEmp.length > 0 ? localEmp : DEFAULT_EMPLOYEES
           });
+          setFacilities(localFac);
           setCloudStatus('synced');
         } else {
-          setFacilities(Array.isArray(res.facilities) ? res.facilities : []);
+          const rawFac = Array.isArray(res.facilities) ? res.facilities : [];
+          const { cleaned, changed } = cleanFacilitiesList(rawFac);
+          setFacilities(cleaned);
           setVisits(Array.isArray(res.visits) ? res.visits : []);
           if (Array.isArray(res.employees) && res.employees.length > 0) {
             setEmployees(res.employees);
           }
           setCloudStatus('synced');
+
+          // Kirli veriler (1, 1*, 2, 3) düzeltildiyse bulutu da güncelle
+          if (changed) {
+            apiRequest('POST', {
+              action: 'sync',
+              facilities: cleaned
+            }).catch(() => {});
+          }
         }
       } else {
         setCloudStatus('offline');

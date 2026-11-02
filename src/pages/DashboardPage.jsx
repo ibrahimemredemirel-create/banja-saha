@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import { List, X, ExternalLink, Calendar, Check, ChevronDown, RotateCcw, MapPin, Tag, Flame } from 'lucide-react';
-import { getEffectiveToplamKort, sortVisitsLatestFirst, formatDateDisplay, normalizeDateToISO } from '../utils/excelExport';
+import { getEffectiveToplamKort, sortVisitsLatestFirst, formatDateDisplay, normalizeDateToISO, normalizeKategori } from '../utils/excelExport';
 import { useNavigate } from 'react-router-dom';
 
 const MONTH_NAMES_TR = {
@@ -82,27 +82,25 @@ const DashboardPage = () => {
     ? facilities
     : facilities.filter(f => selectedCities.includes(f.il));
 
-  // Kategori seçenekleri ve bu illerdeki tesis sayıları (T1, T2, T3, TEST / DENEME vb.)
+  // Kategori seçenekleri ve bu illerdeki tesis sayıları (T1, T2, T3, TEST / DENEME)
   const STANDARD_CATEGORIES = ['T1', 'T2', 'T3', 'TEST / DENEME'];
 
   const { categoryList, categoryCounts } = React.useMemo(() => {
     const counts = { 'T1': 0, 'T2': 0, 'T3': 0, 'TEST / DENEME': 0 };
     let unassigned = 0;
-    const extraCats = new Set();
 
     cityFilteredFacilities.forEach(f => {
-      const cat = (f.kategori || '').trim();
+      const cat = normalizeKategori(f.kategori);
       if (!cat) {
         unassigned++;
       } else if (counts[cat] !== undefined) {
         counts[cat]++;
       } else {
         counts[cat] = (counts[cat] || 0) + 1;
-        extraCats.add(cat);
       }
     });
 
-    const list = [...STANDARD_CATEGORIES, ...Array.from(extraCats)];
+    const list = [...STANDARD_CATEGORIES];
     if (unassigned > 0) {
       counts['BELİRTİLMEMİŞ'] = unassigned;
       list.push('BELİRTİLMEMİŞ');
@@ -124,7 +122,7 @@ const DashboardPage = () => {
   // 2. Kategori filtresi de uygulanmış tesisler
   const filteredFacilities = cityFilteredFacilities.filter(f => {
     if (selectedCategories.length === 0) return true;
-    const cat = (f.kategori || '').trim() || 'BELİRTİLMEMİŞ';
+    const cat = normalizeKategori(f.kategori) || 'BELİRTİLMEMİŞ';
     return selectedCategories.includes(cat);
   });
 
@@ -1034,7 +1032,7 @@ const DashboardPage = () => {
                         </td>
                         <td style={{ padding: '0.65rem 0.5rem', textAlign: 'center' }}>
                           <span className="badge badge-neutral" style={{ fontSize: '0.72rem' }}>
-                            {fac.kategori || 'Belirtilmedi'}
+                            {normalizeKategori(fac.kategori) || 'Belirtilmedi'}
                           </span>
                         </td>
                         <td style={{ padding: '0.65rem 0.5rem', textAlign: 'center' }}>
@@ -1184,9 +1182,9 @@ const DashboardPage = () => {
                           <td style={{ fontWeight: 700, color: 'var(--primary-color)', padding: '0.6rem', fontSize: '0.82rem', wordBreak: 'break-word' }}>
                             <div>{f.tesis}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
-                              {f.kategori && (
+                              {normalizeKategori(f.kategori) && (
                                 <span className="badge badge-neutral" style={{ fontSize: '0.67rem', padding: '0.12rem 0.45rem' }}>
-                                  {f.kategori}
+                                  {normalizeKategori(f.kategori)}
                                 </span>
                               )}
                               {f.kapsamDurumu && (
@@ -1249,9 +1247,9 @@ const DashboardPage = () => {
                             <td style={{ fontWeight: 700, color: 'var(--primary-color)', padding: '0.6rem', fontSize: '0.82rem', wordBreak: 'break-word' }}>
                             <div>{f.tesis}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
-                              {f.kategori && (
+                              {normalizeKategori(f.kategori) && (
                                 <span className="badge badge-neutral" style={{ fontSize: '0.67rem', padding: '0.12rem 0.45rem' }}>
-                                  {f.kategori}
+                                  {normalizeKategori(f.kategori)}
                                 </span>
                               )}
                               {f.kapsamDurumu && (
@@ -1333,9 +1331,9 @@ const DashboardPage = () => {
                           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                             ({group.il}{group.ilce ? ` / ${group.ilce}` : ''})
                           </span>
-                          {group.facility?.kategori && (
+                          {group.facility && normalizeKategori(group.facility.kategori) && (
                             <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>
-                              {group.facility.kategori}
+                              {normalizeKategori(group.facility.kategori)}
                             </span>
                           )}
                           <span className="badge badge-success" style={{ fontSize: '0.72rem' }}>

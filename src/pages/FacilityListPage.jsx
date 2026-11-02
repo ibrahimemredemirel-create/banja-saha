@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Edit, Trash2, RotateCcw, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getEffectiveToplamKort, formatDateDisplay } from '../utils/excelExport';
+import { getEffectiveToplamKort, formatDateDisplay, normalizeKategori } from '../utils/excelExport';
 
 const FacilityListPage = () => {
   const { facilities, deleteFacility } = useData();
@@ -253,7 +253,7 @@ const FacilityListPage = () => {
                       <td style={{ fontWeight: 700, color: isSelected ? 'var(--primary-color)' : 'var(--text-main)' }}>
                         {facility.tesis}
                       </td>
-                      <td><span className="badge badge-neutral">{facility.kategori}</span></td>
+                      <td><span className="badge badge-neutral">{normalizeKategori(facility.kategori) || '-'}</span></td>
                       <td>
                         {facility.kapsamDurumu ? (
                           <span

@@ -1,5 +1,15 @@
 import * as XLSX from 'xlsx';
 
+export const normalizeKategori = (raw) => {
+  if (!raw) return '';
+  const s = String(raw).trim().toUpperCase();
+  if (s === '1' || s === '1*' || s === 'T1' || s === 'TI' || s === 'T 1') return 'T1';
+  if (s === '2' || s === '2*' || s === 'T2' || s === 'T 2') return 'T2';
+  if (s === '3' || s === '3*' || s === 'T3' || s === 'T 3') return 'T3';
+  if (s.includes('TEST') || s.includes('DENEME')) return 'TEST / DENEME';
+  return s;
+};
+
 export const TESIS_TEMPLATE_COLUMNS = [
   { header: 'SIRA', key: 'sir' },
   { header: 'KAYIT TARİHİ', key: 'kayitTarihi' },
@@ -196,7 +206,7 @@ export const parseExcelFacilities = (file) => {
               sir: getVal('SIRA'),
               kayitTarihi: rawDate || today,
               tesis: tesisName,
-              kategori: getVal('KATEGORİ') || '',
+              kategori: normalizeKategori(getVal('KATEGORİ')),
               kapsamDurumu: normalizedKapsam || '',
               il: rawIl ? rawIl.toLocaleUpperCase('tr-TR') : '',
               ilce: getVal('İLÇE/BÖLGE') || getVal('İLÇE') || '',

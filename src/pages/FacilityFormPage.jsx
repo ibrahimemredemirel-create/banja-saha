@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import { Save, FileSpreadsheet, Upload } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { downloadEmptyFacilityTemplate, parseExcelFacilities, getEffectiveToplamKort, normalizeDateToISO } from '../utils/excelExport';
+import { downloadEmptyFacilityTemplate, parseExcelFacilities, getEffectiveToplamKort, normalizeDateToISO, normalizeKategori } from '../utils/excelExport';
 
 const KATEGORILER = ['T1', 'T2', 'T3', 'TEST / DENEME'];
 const KAPSAM_DURUMLARI = ['KAPSAM DAHİLİNDE', 'KAPSAM DIŞI'];
@@ -152,6 +152,7 @@ const FacilityFormPage = () => {
       setFormData({
         ...getInitialState(editingFacility.sir || '1'),
         ...editingFacility,
+        kategori: normalizeKategori(editingFacility.kategori),
         kayitTarihi: normalizeDateToISO(editingFacility.kayitTarihi) || new Date().toISOString().split('T')[0],
         toplamKort: getEffectiveToplamKort(editingFacility)
       });
