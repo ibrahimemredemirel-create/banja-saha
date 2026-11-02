@@ -852,12 +852,12 @@ const DashboardPage = () => {
                       <table style={{ width: '100%', whiteSpace: 'normal', tableLayout: 'fixed' }}>
                         <thead>
                           <tr>
-                            <th style={{ width: '13%', padding: '0.5rem 0.75rem', fontSize: '0.73rem' }}>TARİH</th>
+                            <th style={{ width: '12%', padding: '0.5rem 0.75rem', fontSize: '0.73rem' }}>TARİH</th>
                             <th style={{ width: '11%', padding: '0.5rem 0.5rem', fontSize: '0.73rem' }}>EKİP</th>
-                            <th style={{ width: '12%', padding: '0.5rem 0.5rem', fontSize: '0.73rem' }}>SEBEP</th>
+                            <th style={{ width: '14%', padding: '0.5rem 0.5rem', fontSize: '0.73rem' }}>SEBEP / ŞEKİL</th>
                             <th style={{ width: '16%', padding: '0.5rem 0.5rem', fontSize: '0.73rem' }}>KONTAK KİŞİ</th>
                             <th style={{ width: '18%', padding: '0.5rem 0.5rem', fontSize: '0.73rem' }}>SONUÇ</th>
-                            <th style={{ width: '30%', padding: '0.5rem 0.75rem', fontSize: '0.73rem' }}>AÇIKLAMA</th>
+                            <th style={{ width: '29%', padding: '0.5rem 0.75rem', fontSize: '0.73rem' }}>AÇIKLAMA</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -870,7 +870,7 @@ const DashboardPage = () => {
                                 <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>{v.ziyaretEden || '-'}</span>
                               </td>
                               <td style={{ padding: '0.55rem 0.5rem', fontSize: '0.78rem' }}>
-                                {v.ziyaretSebebi || '-'}
+                                {[v.ziyaretSebebi, v.gorusmeSekli].filter(Boolean).join(' / ') || '-'}
                               </td>
                               <td style={{ padding: '0.55rem 0.5rem', fontSize: '0.79rem', wordBreak: 'break-word' }}>
                                 {v.kontakKisi || '-'}

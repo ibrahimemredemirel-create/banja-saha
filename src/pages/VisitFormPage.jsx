@@ -14,6 +14,7 @@ const parseSelectedEmployeeList = (val) => {
 
 const KONTAK_UNVANLAR = ['İŞLETME SAHİBİ', 'İŞLETMECİ', 'ANTRENÖR', 'ÇALIŞAN'];
 const ZIYARET_SEBEPLERI = ['GÖRÜŞME', 'KEŞİF', 'KURULUM'];
+const GORUSME_SEKILLERI = ['TELEFON', 'ONLİNE', 'YÜZ YÜZE', 'E POSTA', 'WHATSAPP'];
 const ZIYARET_SONUCLARI = [
   'GÖRÜŞME DEVAM EDİYOR',
   'TEKLİF VERİLDİ',
@@ -49,6 +50,7 @@ const VisitFormPage = () => {
     ziyaretEden: '',
     facilityId: '',
     ziyaretSebebi: '',
+    gorusmeSekli: '',
     kontakKisi: '',
     kontakUnvan: '',
     telefon: '',
@@ -71,6 +73,7 @@ const VisitFormPage = () => {
         ziyaretEden: incomingVisit.ziyaretEden || '',
         facilityId: incomingVisit.facilityId || '',
         ziyaretSebebi: incomingVisit.ziyaretSebebi || '',
+        gorusmeSekli: incomingVisit.gorusmeSekli || '',
         kontakKisi: incomingVisit.kontakKisi || '',
         kontakUnvan: incomingVisit.kontakUnvan || '',
         telefon: incomingVisit.telefon || '',
@@ -236,6 +239,7 @@ const VisitFormPage = () => {
       ziyaretEden: '',
       facilityId: '',
       ziyaretSebebi: '',
+      gorusmeSekli: '',
       kontakKisi: '',
       kontakUnvan: '',
       telefon: '',
@@ -254,6 +258,7 @@ const VisitFormPage = () => {
       ziyaretEden: v.ziyaretEden || '',
       facilityId: v.facilityId || '',
       ziyaretSebebi: v.ziyaretSebebi || '',
+      gorusmeSekli: v.gorusmeSekli || '',
       kontakKisi: v.kontakKisi || '',
       kontakUnvan: v.kontakUnvan || '',
       telefon: v.telefon || '',
@@ -525,6 +530,22 @@ const VisitFormPage = () => {
             </select>
           </div>
 
+          {/* 5. GÖRÜŞME ŞEKLİ */}
+          <div className="form-group">
+            <label>GÖRÜŞME ŞEKLİ</label>
+            <select
+              className="form-control"
+              name="gorusmeSekli"
+              value={formData.gorusmeSekli}
+              onChange={handleChange}
+            >
+              <option value="">Seçiniz...</option>
+              {GORUSME_SEKILLERI.map(sekil => (
+                <option key={sekil} value={sekil}>{sekil}</option>
+              ))}
+            </select>
+          </div>
+
           {/* 5. KONTAK KİŞİ */}
           <div className="form-group">
             <label>KONTAK KİŞİ</label>
@@ -665,10 +686,13 @@ const VisitFormPage = () => {
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <User size={13} /> {v.ziyaretEden} • {v.kontakKisi} {v.kontakUnvan ? `(${v.kontakUnvan})` : ''}
                   </div>
-                  {(v.ziyaretSebebi || v.ziyaretSonucu) && (
+                  {(v.ziyaretSebebi || v.gorusmeSekli || v.ziyaretSonucu) && (
                     <div style={{ marginBottom: '0.4rem', display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                       {v.ziyaretSebebi && (
                         <span className="badge badge-neutral" style={{ fontSize: '0.72rem' }}>{v.ziyaretSebebi}</span>
+                      )}
+                      {v.gorusmeSekli && (
+                        <span className="badge badge-success" style={{ fontSize: '0.72rem' }}>{v.gorusmeSekli}</span>
                       )}
                       {v.ziyaretSonucu && (
                         <span className="badge badge-warning" style={{ fontSize: '0.72rem' }}>{v.ziyaretSonucu}</span>

@@ -32,6 +32,7 @@ export const ZIYARET_TEMPLATE_COLUMNS = [
   { header: 'TESİS', key: 'tesis' },
   { header: 'ZİYARET EDEN', key: 'ziyaretEden' },
   { header: 'ZİYARET SEBEBİ', key: 'ziyaretSebebi' },
+  { header: 'GÖRÜŞME ŞEKLİ', key: 'gorusmeSekli' },
   { header: 'KONTAK KİŞİ', key: 'kontakKisi' },
   { header: 'KONTAK UNVAN', key: 'kontakUnvan' },
   { header: 'TELEFON', key: 'telefon' },
@@ -320,6 +321,14 @@ export const parseExcelVisits = (file, facilities = []) => {
           else if (rawSebep.includes('KEŞİF') || rawSebep.includes('KESIF')) normalizedSebep = 'KEŞİF';
           else if (rawSebep.includes('KURULUM')) normalizedSebep = 'KURULUM';
 
+          const rawSekil = getVal('GÖRÜŞME ŞEKLİ', 'GORUSME SEKLI', 'GÖRÜŞME TÜRÜ', 'İLETİŞİM ŞEKLİ', 'KANAL').toLocaleUpperCase('tr-TR');
+          let normalizedSekil = rawSekil;
+          if (rawSekil.includes('TELEFON') || rawSekil === 'TEL') normalizedSekil = 'TELEFON';
+          else if (rawSekil.includes('ONLİNE') || rawSekil.includes('ONLINE')) normalizedSekil = 'ONLİNE';
+          else if (rawSekil.includes('YÜZ') || rawSekil.includes('YUZ')) normalizedSekil = 'YÜZ YÜZE';
+          else if (rawSekil.includes('POSTA') || rawSekil.includes('MAİL') || rawSekil.includes('MAIL')) normalizedSekil = 'E POSTA';
+          else if (rawSekil.includes('WHATSAPP') || rawSekil.includes('WP')) normalizedSekil = 'WHATSAPP';
+
           const rawSonuc = getVal('ZİYARET SONUCU', 'ZIYARET SONUCU', 'SONUÇ', 'SONUC').toLocaleUpperCase('tr-TR');
           let normalizedSonuc = rawSonuc;
           if (rawSonuc.includes('VERİLDİ') || rawSonuc.includes('VERILDI')) normalizedSonuc = 'TEKLİF VERİLDİ';
@@ -334,6 +343,7 @@ export const parseExcelVisits = (file, facilities = []) => {
             ziyaretTarihi,
             ziyaretEden: getVal('ZİYARET EDEN', 'ZIYARET EDEN', 'SAHA ÇALIŞANI', 'EKİP').toLocaleUpperCase('tr-TR'),
             ziyaretSebebi: normalizedSebep,
+            gorusmeSekli: normalizedSekil,
             kontakKisi: getVal('KONTAK KİŞİ', 'KONTAK KISI', 'KONTAK'),
             kontakUnvan: getVal('KONTAK UNVAN', 'KONTAK ÜNVAN', 'UNVAN', 'ÜNVAN').toLocaleUpperCase('tr-TR'),
             telefon: getVal('TELEFON', 'TEL', 'GSM'),
@@ -403,6 +413,7 @@ export const exportToExcel = (facilities, visits = [], fileName = 'Banja_Saha_Ve
       'TESİS': fac.tesis || v.tesisAdi || '',
       'ZİYARET EDEN': v.ziyaretEden || '',
       'ZİYARET SEBEBİ': v.ziyaretSebebi || '',
+      'GÖRÜŞME ŞEKLİ': v.gorusmeSekli || '',
       'KONTAK KİŞİ': v.kontakKisi || '',
       'KONTAK UNVAN': v.kontakUnvan || '',
       'TELEFON': v.telefon || '',

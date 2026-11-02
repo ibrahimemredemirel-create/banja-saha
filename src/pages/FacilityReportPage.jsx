@@ -349,6 +349,7 @@ const FacilityReportPage = () => {
                   <th>ZİYARET TARİHİ</th>
                   <th>ZİYARET EDEN</th>
                   <th>ZİYARET SEBEBİ</th>
+                  <th>GÖRÜŞME ŞEKLİ</th>
                   <th>KONTAK KİŞİ</th>
                   <th>KONTAK UNVAN</th>
                   <th>ZİYARET SONUCU</th>
@@ -361,14 +362,14 @@ const FacilityReportPage = () => {
               <tbody>
                 {!selectedFacility && (
                   <tr>
-                    <td colSpan="11" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                    <td colSpan="12" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
                       Lütfen yukarıdaki arama çubuğundan bir tesis seçiniz.
                     </td>
                   </tr>
                 )}
                 {selectedFacility && facilityVisits.length === 0 && (
                   <tr>
-                    <td colSpan="11" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                    <td colSpan="12" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
                       Seçili tesise ait henüz ziyaret kaydı bulunmuyor.
                     </td>
                   </tr>
@@ -398,6 +399,7 @@ const FacilityReportPage = () => {
                         <span className="badge badge-neutral">{v.ziyaretEden || '-'}</span>
                       </td>
                       <td>{v.ziyaretSebebi || '-'}</td>
+                      <td>{v.gorusmeSekli || '-'}</td>
                       <td>{v.kontakKisi || '-'}</td>
                       <td>{v.kontakUnvan || '-'}</td>
                       <td>
