@@ -471,10 +471,10 @@ const DashboardPage = () => {
                     width: '285px',
                     maxHeight: '340px',
                     overflowY: 'auto',
-                    backgroundColor: '#0c1821',
+                    backgroundColor: 'var(--dropdown-bg)',
                     border: '1px solid var(--primary-color)',
                     borderRadius: '10px',
-                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.75)',
+                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.45)',
                     zIndex: 120,
                     padding: '0.45rem'
                   }}>
@@ -501,7 +501,7 @@ const DashboardPage = () => {
                         width: '18px',
                         height: '18px',
                         borderRadius: '4px',
-                        border: selectedMonths.length === 0 ? '1px solid var(--primary-color)' : '1px solid #334e62',
+                        border: selectedMonths.length === 0 ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
                         backgroundColor: selectedMonths.length === 0 ? 'var(--primary-color)' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
@@ -552,7 +552,7 @@ const DashboardPage = () => {
                             <span style={{
                               fontSize: '0.7rem',
                               color: isChecked ? 'var(--accent-lime)' : 'var(--text-muted)',
-                              backgroundColor: '#081117',
+                              backgroundColor: 'var(--pill-bg)',
                               padding: '0.1rem 0.45rem',
                               borderRadius: '999px',
                               border: '1px solid var(--border-subtle)'
@@ -565,7 +565,7 @@ const DashboardPage = () => {
                             width: '18px',
                             height: '18px',
                             borderRadius: '4px',
-                            border: isChecked ? '1px solid var(--accent-lime)' : '1px solid #334e62',
+                            border: isChecked ? '1px solid var(--accent-lime)' : '1px solid var(--border-color)',
                             backgroundColor: isChecked ? 'var(--accent-lime)' : 'transparent',
                             display: 'flex',
                             alignItems: 'center',
@@ -638,10 +638,10 @@ const DashboardPage = () => {
                     width: '260px',
                     maxHeight: '340px',
                     overflowY: 'auto',
-                    backgroundColor: '#0c1821',
+                    backgroundColor: 'var(--dropdown-bg)',
                     border: '1px solid var(--primary-color)',
                     borderRadius: '10px',
-                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.75)',
+                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.45)',
                     zIndex: 120,
                     padding: '0.45rem'
                   }}>
@@ -668,7 +668,7 @@ const DashboardPage = () => {
                         width: '18px',
                         height: '18px',
                         borderRadius: '4px',
-                        border: selectedCities.length === 0 ? '1px solid var(--primary-color)' : '1px solid #334e62',
+                        border: selectedCities.length === 0 ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
                         backgroundColor: selectedCities.length === 0 ? 'var(--primary-color)' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
@@ -715,7 +715,7 @@ const DashboardPage = () => {
                             <span style={{
                               fontSize: '0.7rem',
                               color: isChecked ? 'var(--primary-color)' : 'var(--text-muted)',
-                              backgroundColor: '#081117',
+                              backgroundColor: 'var(--pill-bg)',
                               padding: '0.1rem 0.45rem',
                               borderRadius: '999px',
                               border: '1px solid var(--border-subtle)'
@@ -728,7 +728,7 @@ const DashboardPage = () => {
                             width: '18px',
                             height: '18px',
                             borderRadius: '4px',
-                            border: isChecked ? '1px solid var(--primary-color)' : '1px solid #334e62',
+                            border: isChecked ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
                             backgroundColor: isChecked ? 'var(--primary-color)' : 'transparent',
                             display: 'flex',
                             alignItems: 'center',
@@ -779,7 +779,7 @@ const DashboardPage = () => {
             flexWrap: 'wrap',
             marginTop: '0.85rem',
             paddingTop: '0.85rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+            borderTop: '1px solid var(--border-subtle)'
           }}>
             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
               <Tag size={13} color="var(--primary-color)" /> KATEGORİ:
@@ -795,7 +795,7 @@ const DashboardPage = () => {
                 fontWeight: 700,
                 cursor: 'pointer',
                 border: selectedCategories.length === 0 ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
-                backgroundColor: selectedCategories.length === 0 ? 'rgba(0, 210, 255, 0.18)' : '#0b161e',
+                backgroundColor: selectedCategories.length === 0 ? 'rgba(0, 210, 255, 0.18)' : 'var(--card-sub-bg)',
                 color: selectedCategories.length === 0 ? 'var(--primary-color)' : 'var(--text-muted)',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -805,7 +805,7 @@ const DashboardPage = () => {
             >
               <span>TÜMÜ</span>
               <span style={{
-                backgroundColor: selectedCategories.length === 0 ? 'rgba(0, 210, 255, 0.25)' : 'rgba(0,0,0,0.3)',
+                backgroundColor: selectedCategories.length === 0 ? 'rgba(0, 210, 255, 0.25)' : 'rgba(0,0,0,0.15)',
                 color: selectedCategories.length === 0 ? 'var(--primary-color)' : 'var(--text-muted)',
                 padding: '0.05rem 0.45rem',
                 borderRadius: '10px',
@@ -830,7 +830,7 @@ const DashboardPage = () => {
                     fontWeight: isSelected ? 700 : 600,
                     cursor: 'pointer',
                     border: isSelected ? '1px solid var(--accent-lime)' : '1px solid var(--border-color)',
-                    backgroundColor: isSelected ? 'rgba(182, 255, 0, 0.16)' : '#0b161e',
+                    backgroundColor: isSelected ? 'rgba(182, 255, 0, 0.16)' : 'var(--card-sub-bg)',
                     color: isSelected ? 'var(--accent-lime)' : 'var(--text-main)',
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -840,7 +840,7 @@ const DashboardPage = () => {
                 >
                   <span>{cat}</span>
                   <span style={{
-                    backgroundColor: isSelected ? 'rgba(0,0,0,0.4)' : '#081117',
+                    backgroundColor: isSelected ? 'rgba(0,0,0,0.3)' : 'var(--pill-bg)',
                     color: isSelected ? 'var(--accent-lime)' : 'var(--text-muted)',
                     padding: '0.05rem 0.45rem',
                     borderRadius: '10px',
@@ -909,7 +909,7 @@ const DashboardPage = () => {
           <span className="section-label" style={{ marginBottom: '0.85rem' }}>ZİYARET SONUÇ ÖZETİ</span>
 
           <div className="stats-grid" style={{ marginBottom: 0, gridTemplateColumns: 'repeat(4, 1fr)' }}>
-            <div className="stat-card" style={{ backgroundColor: '#0a161d', borderLeft: '3px solid #00d2ff' }}>
+            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid #00d2ff' }}>
               {renderCardHeader('TEKLİF VERİLDİ', 'TEKLIF_VERILDI')}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
                 <span className="stat-value" style={{ color: '#00d2ff' }}>{teklifVerildiCount}</span>
@@ -921,7 +921,7 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="stat-card" style={{ backgroundColor: '#0a161d', borderLeft: '3px solid #b6ff00' }}>
+            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid #b6ff00' }}>
               {renderCardHeader('TEKLİF VERİLMEDİ / VERİLECEK', 'TEKLIF_VERILMEDI')}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
                 <span className="stat-value" style={{ color: '#b6ff00' }}>{teklifVerilmediCount}</span>
@@ -933,7 +933,7 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="stat-card" style={{ backgroundColor: '#0a161d', borderLeft: '3px solid #38bdf8' }}>
+            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid #38bdf8' }}>
               {renderCardHeader('GÖRÜŞME DEVAM EDİYOR', 'GORUSME_DEVAM')}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
                 <span className="stat-value" style={{ color: '#38bdf8' }}>{gorusmeDevamCount}</span>
@@ -945,7 +945,7 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="stat-card" style={{ backgroundColor: '#0a161d', borderLeft: '3px solid #f87171' }}>
+            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid #f87171' }}>
               {renderCardHeader('OLUMSUZ', 'OLUMSUZ')}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
                 <span className="stat-value" style={{ color: '#f87171' }}>{olumsuzCount}</span>
@@ -1007,7 +1007,7 @@ const DashboardPage = () => {
                             borderRadius: '50%',
                             fontWeight: 800,
                             fontSize: '0.75rem',
-                            backgroundColor: idx === 0 ? 'rgba(255, 184, 0, 0.2)' : idx === 1 ? 'rgba(0, 210, 255, 0.2)' : idx === 2 ? 'rgba(182, 255, 0, 0.2)' : '#101d26',
+                            backgroundColor: idx === 0 ? 'rgba(255, 184, 0, 0.2)' : idx === 1 ? 'rgba(0, 210, 255, 0.2)' : idx === 2 ? 'rgba(182, 255, 0, 0.2)' : 'var(--card-sub-bg)',
                             color: idx === 0 ? '#ffb800' : idx === 1 ? '#00d2ff' : idx === 2 ? 'var(--accent-lime)' : 'var(--text-muted)',
                             border: idx === 0 ? '1px solid #ffb800' : idx === 1 ? '1px solid #00d2ff' : idx === 2 ? '1px solid var(--accent-lime)' : '1px solid var(--border-color)'
                           }}>
@@ -1136,8 +1136,8 @@ const DashboardPage = () => {
                 type="button"
                 onClick={() => setActiveModalKey(null)}
                 style={{
-                  background: '#13242f',
-                  border: '1px solid #243e4f',
+                  background: 'var(--btn-outline-bg)',
+                  border: '1px solid var(--border-color)',
                   color: 'var(--text-main)',
                   width: '34px',
                   height: '34px',
@@ -1298,14 +1298,14 @@ const DashboardPage = () => {
                         border: '1px solid var(--border-color)',
                         borderLeft: '3px solid var(--primary-color)',
                         borderRadius: '10px',
-                        backgroundColor: '#0b161e',
+                        backgroundColor: 'var(--card-sub-bg)',
                         overflow: 'hidden'
                       }}
                     >
                       {/* Tesis Grup Başlığı */}
                       <div style={{
                         padding: '0.7rem 1rem',
-                        backgroundColor: '#0f202b',
+                        backgroundColor: 'var(--th-bg)',
                         borderBottom: '1px solid var(--border-color)',
                         display: 'flex',
                         alignItems: 'center',
@@ -1318,7 +1318,7 @@ const DashboardPage = () => {
                             fontSize: '0.75rem',
                             fontWeight: 700,
                             color: 'var(--text-muted)',
-                            backgroundColor: '#091319',
+                            backgroundColor: 'var(--pill-bg)',
                             padding: '0.2rem 0.55rem',
                             borderRadius: '6px',
                             border: '1px solid var(--border-subtle)'

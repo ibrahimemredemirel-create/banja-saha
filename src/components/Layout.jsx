@@ -8,7 +8,9 @@ import {
   Smartphone,
   Settings,
   LogOut,
-  Download
+  Download,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
@@ -42,6 +44,18 @@ export const BanjaIconSmall = () => (
 const Layout = () => {
   const { logout, cloudStatus } = useData();
   const [installPrompt, setInstallPrompt] = useState(() => window.__deferredPwaPrompt || null);
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('banja_theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('banja_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   useEffect(() => {
     const onAvailable = () => setInstallPrompt(window.__deferredPwaPrompt || null);
@@ -68,7 +82,7 @@ const Layout = () => {
             paddingLeft: '0.25rem',
             fontSize: '0.92rem',
             fontWeight: 700,
-            color: '#f1f5f9',
+            color: 'var(--text-main)',
             letterSpacing: '0.02em',
             display: 'flex',
             alignItems: 'center',
@@ -167,12 +181,45 @@ const Layout = () => {
           </button>
         )}
 
+        {/* Açık / Koyu Tema Değiştirme Butonu */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="sidebar-link"
+          style={{
+            marginTop: 'auto',
+            background: 'none',
+            cursor: 'pointer',
+            color: 'var(--text-main)',
+            width: '100%',
+            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            borderTop: '1px solid var(--border-subtle)',
+            paddingTop: '0.85rem'
+          }}
+          title={theme === 'dark' ? 'Açık Temaya Geç' : 'Koyu Temaya Geç'}
+        >
+          {theme === 'dark' ? (
+            <>
+              <Sun size={18} color="#f59e0b" />
+              <span>Açık Tema</span>
+            </>
+          ) : (
+            <>
+              <Moon size={18} color="#0284c7" />
+              <span>Koyu Tema</span>
+            </>
+          )}
+        </button>
+
         <button
           type="button"
           onClick={logout}
           className="sidebar-link"
           style={{
-            marginTop: 'auto',
+            marginTop: '0.2rem',
             background: 'none',
             cursor: 'pointer',
             color: 'var(--danger)',
