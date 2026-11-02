@@ -129,8 +129,16 @@ const FacilityReportPage = () => {
         <div className="dashboard-card" style={{ marginBottom: 0 }}>
           <span className="section-label">TESİS BAZLI DETAYLI RAPOR</span>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginTop: '0.25rem' }}>
-            <h2 style={{ margin: 0, fontSize: '1.15rem', flex: '1 1 280px' }}>
-              {selectedFacility ? `${selectedFacility.tesis} - Tesis Raporu` : 'Tesis Seçiniz'}
+            <h2 style={{ margin: 0, fontSize: '1.15rem', flex: '1 1 280px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.55rem' }}>
+              <span>{selectedFacility ? `${selectedFacility.tesis} - Tesis Raporu` : 'Tesis Seçiniz'}</span>
+              {selectedFacility && selectedFacility.kapsamDurumu && (
+                <span
+                  className={`badge ${selectedFacility.kapsamDurumu === 'KAPSAM DAHİLİNDE' ? 'badge-success' : 'badge-danger'}`}
+                  style={{ fontSize: '0.74rem' }}
+                >
+                  {selectedFacility.kapsamDurumu}
+                </span>
+              )}
             </h2>
 
             <div ref={dropdownRef} style={{ minWidth: '320px', flex: '0 1 440px', position: 'relative' }}>

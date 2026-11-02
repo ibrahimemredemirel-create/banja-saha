@@ -114,8 +114,8 @@ const getInitialState = (nextSir) => ({
   sir: nextSir,
   kayitTarihi: new Date().toISOString().split('T')[0],
   tesis: '',
-  kapsamDurumu: '',
   kategori: '',
+  kapsamDurumu: '',
   il: '',
   ilce: '',
   tesisTuru: '',
@@ -312,16 +312,7 @@ const FacilityFormPage = () => {
             />
           </div>
 
-          {/* 4. KAPSAM DURUMU */}
-          <div className="form-group">
-            <label>KAPSAM DURUMU</label>
-            <select className="form-control" name="kapsamDurumu" value={formData.kapsamDurumu} onChange={handleChange}>
-              <option value="">Seçiniz...</option>
-              {KAPSAM_DURUMLARI.map(kd => <option key={kd} value={kd}>{kd}</option>)}
-            </select>
-          </div>
-
-          {/* 5. KATEGORİ */}
+          {/* 4. KATEGORİ */}
           <div className="form-group">
             <label>KATEGORİ</label>
             <select className="form-control" name="kategori" value={formData.kategori} onChange={handleChange}>
@@ -330,7 +321,16 @@ const FacilityFormPage = () => {
             </select>
           </div>
 
-          {/* 5. İL */}
+          {/* 5. KAPSAM DURUMU */}
+          <div className="form-group">
+            <label>KAPSAM DURUMU</label>
+            <select className="form-control" name="kapsamDurumu" value={formData.kapsamDurumu} onChange={handleChange}>
+              <option value="">Seçiniz...</option>
+              {KAPSAM_DURUMLARI.map(kd => <option key={kd} value={kd}>{kd}</option>)}
+            </select>
+          </div>
+
+          {/* 6. İL */}
           <div className="form-group">
             <label>İL</label>
             <select className="form-control" name="il" value={formData.il} onChange={handleChange}>
@@ -339,7 +339,7 @@ const FacilityFormPage = () => {
             </select>
           </div>
 
-          {/* 6. İLÇE/BÖLGE */}
+          {/* 7. İLÇE/BÖLGE */}
           <div className="form-group">
             <label>İLÇE / BÖLGE</label>
             <input

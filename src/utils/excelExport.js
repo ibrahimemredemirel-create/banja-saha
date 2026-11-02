@@ -4,8 +4,8 @@ export const TESIS_TEMPLATE_COLUMNS = [
   { header: 'SIRA', key: 'sir' },
   { header: 'KAYIT TARİHİ', key: 'kayitTarihi' },
   { header: 'TESİS', key: 'tesis' },
-  { header: 'KAPSAM DURUMU', key: 'kapsamDurumu' },
   { header: 'KATEGORİ', key: 'kategori' },
+  { header: 'KAPSAM DURUMU', key: 'kapsamDurumu' },
   { header: 'İL', key: 'il' },
   { header: 'İLÇE/BÖLGE', key: 'ilce' },
   { header: 'TESİS TÜRÜ', key: 'tesisTuru' },
@@ -186,17 +186,18 @@ export const parseExcelFacilities = (file) => {
 
             const rawDate = formatExcelDateValue(normalizedRow['KAYIT TARİHİ']);
             const rawIl = getVal('İL');
-            const rawKapsam = (getVal('KAPSAM DURUMU') || getVal('KAPSAM')).toLocaleUpperCase('tr-TR');
-            let normalizedKapsam = rawKapsam;
-            if (rawKapsam.includes('DAHİL') || rawKapsam.includes('DAHIL')) normalizedKapsam = 'KAPSAM DAHİLİNDE';
-            else if (rawKapsam.includes('DIŞ') || rawKapsam.includes('DIS')) normalizedKapsam = 'KAPSAM DIŞI';
+
+            const rawKapsam = getVal('KAPSAM DURUMU') || getVal('KAPSAM');
+            let normalizedKapsam = rawKapsam.toLocaleUpperCase('tr-TR');
+            if (normalizedKapsam.includes('DAHİL') || normalizedKapsam.includes('DAHIL')) normalizedKapsam = 'KAPSAM DAHİLİNDE';
+            else if (normalizedKapsam.includes('DIŞ') || normalizedKapsam.includes('DIS')) normalizedKapsam = 'KAPSAM DIŞI';
 
             return {
               sir: getVal('SIRA'),
               kayitTarihi: rawDate || today,
               tesis: tesisName,
-              kapsamDurumu: normalizedKapsam,
               kategori: getVal('KATEGORİ') || '',
+              kapsamDurumu: normalizedKapsam || '',
               il: rawIl ? rawIl.toLocaleUpperCase('tr-TR') : '',
               ilce: getVal('İLÇE/BÖLGE') || getVal('İLÇE') || '',
               tesisTuru: getVal('TESİS TÜRÜ') || '',

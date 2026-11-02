@@ -713,7 +713,19 @@ const DashboardPage = () => {
                     <tbody>
                       {activeModal.items.map(f => (
                         <tr key={f.id}>
-                          <td style={{ fontWeight: 700, color: 'var(--primary-color)', padding: '0.6rem', fontSize: '0.82rem', wordBreak: 'break-word' }}>{f.tesis}</td>
+                          <td style={{ fontWeight: 700, color: 'var(--primary-color)', padding: '0.6rem', fontSize: '0.82rem', wordBreak: 'break-word' }}>
+                            <div>{f.tesis}</div>
+                            {f.kapsamDurumu && (
+                              <div style={{ marginTop: '0.2rem' }}>
+                                <span
+                                  className={`badge ${f.kapsamDurumu === 'KAPSAM DAHİLİNDE' ? 'badge-success' : 'badge-danger'}`}
+                                  style={{ fontSize: '0.67rem', padding: '0.15rem 0.45rem' }}
+                                >
+                                  {f.kapsamDurumu}
+                                </span>
+                              </div>
+                            )}
+                          </td>
                           <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.8rem' }}>{f.il || '-'}</td>
                           <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.8rem', wordBreak: 'break-word' }}>{f.ilce || '-'}</td>
                           <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.78rem' }}>{f.tesisTuru || '-'}</td>
@@ -761,7 +773,19 @@ const DashboardPage = () => {
                         const latest = facVisits[0] || {};
                         return (
                           <tr key={f.id}>
-                            <td style={{ fontWeight: 700, color: 'var(--primary-color)', padding: '0.6rem', fontSize: '0.82rem', wordBreak: 'break-word' }}>{f.tesis}</td>
+                            <td style={{ fontWeight: 700, color: 'var(--primary-color)', padding: '0.6rem', fontSize: '0.82rem', wordBreak: 'break-word' }}>
+                            <div>{f.tesis}</div>
+                            {f.kapsamDurumu && (
+                              <div style={{ marginTop: '0.2rem' }}>
+                                <span
+                                  className={`badge ${f.kapsamDurumu === 'KAPSAM DAHİLİNDE' ? 'badge-success' : 'badge-danger'}`}
+                                  style={{ fontSize: '0.67rem', padding: '0.15rem 0.45rem' }}
+                                >
+                                  {f.kapsamDurumu}
+                                </span>
+                              </div>
+                            )}
+                          </td>
                             <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.8rem' }}>{f.il || '-'}</td>
                             <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.8rem', wordBreak: 'break-word' }}>{f.ilce || '-'}</td>
                             <td style={{ padding: '0.6rem 0.5rem', textAlign: 'center' }}>

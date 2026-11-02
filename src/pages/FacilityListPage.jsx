@@ -200,8 +200,8 @@ const FacilityListPage = () => {
                   <th>SIRA</th>
                   <th>KAYIT TARİHİ</th>
                   <th>TESİS</th>
-                  <th>KAPSAM DURUMU</th>
                   <th>KATEGORİ</th>
+                  <th>KAPSAM</th>
                   <th>İL</th>
                   <th>İLÇE/BÖLGE</th>
                   <th>TESİS TÜRÜ</th>
@@ -253,14 +253,17 @@ const FacilityListPage = () => {
                       <td style={{ fontWeight: 700, color: isSelected ? 'var(--primary-color)' : 'var(--text-main)' }}>
                         {facility.tesis}
                       </td>
+                      <td><span className="badge badge-neutral">{facility.kategori}</span></td>
                       <td>
                         {facility.kapsamDurumu ? (
-                          <span className={`badge ${facility.kapsamDurumu === 'KAPSAM DAHİLİNDE' ? 'badge-success' : 'badge-danger'}`}>
+                          <span
+                            className={`badge ${facility.kapsamDurumu === 'KAPSAM DAHİLİNDE' ? 'badge-success' : 'badge-danger'}`}
+                            style={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}
+                          >
                             {facility.kapsamDurumu}
                           </span>
                         ) : '-'}
                       </td>
-                      <td><span className="badge badge-neutral">{facility.kategori}</span></td>
                       <td>{facility.il}</td>
                       <td>{facility.ilce}</td>
                       <td>{facility.tesisTuru}</td>
