@@ -200,6 +200,7 @@ const FacilityListPage = () => {
                   <th>SIRA</th>
                   <th>KAYIT TARİHİ</th>
                   <th>TESİS</th>
+                  <th>KAPSAM DURUMU</th>
                   <th>KATEGORİ</th>
                   <th>İL</th>
                   <th>İLÇE/BÖLGE</th>
@@ -221,7 +222,7 @@ const FacilityListPage = () => {
               <tbody>
                 {filteredFacilities.length === 0 && (
                   <tr>
-                    <td colSpan="20" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                    <td colSpan="21" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
                       Kriterlere uygun tesis kaydı bulunamadı.
                     </td>
                   </tr>
@@ -251,6 +252,13 @@ const FacilityListPage = () => {
                       <td>{formatDateDisplay(facility.kayitTarihi)}</td>
                       <td style={{ fontWeight: 700, color: isSelected ? 'var(--primary-color)' : 'var(--text-main)' }}>
                         {facility.tesis}
+                      </td>
+                      <td>
+                        {facility.kapsamDurumu ? (
+                          <span className={`badge ${facility.kapsamDurumu === 'KAPSAM DAHİLİNDE' ? 'badge-success' : 'badge-danger'}`}>
+                            {facility.kapsamDurumu}
+                          </span>
+                        ) : '-'}
                       </td>
                       <td><span className="badge badge-neutral">{facility.kategori}</span></td>
                       <td>{facility.il}</td>

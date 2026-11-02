@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { downloadEmptyFacilityTemplate, parseExcelFacilities, getEffectiveToplamKort, normalizeDateToISO } from '../utils/excelExport';
 
 const KATEGORILER = ['T1', 'T2', 'T3', 'TEST / DENEME'];
+const KAPSAM_DURUMLARI = ['KAPSAM DAHİLİNDE', 'KAPSAM DIŞI'];
 const ILLER = [
   'İSTANBUL',
   'ANKARA',
@@ -113,6 +114,7 @@ const getInitialState = (nextSir) => ({
   sir: nextSir,
   kayitTarihi: new Date().toISOString().split('T')[0],
   tesis: '',
+  kapsamDurumu: '',
   kategori: '',
   il: '',
   ilce: '',
@@ -310,7 +312,16 @@ const FacilityFormPage = () => {
             />
           </div>
 
-          {/* 4. KATEGORİ */}
+          {/* 4. KAPSAM DURUMU */}
+          <div className="form-group">
+            <label>KAPSAM DURUMU</label>
+            <select className="form-control" name="kapsamDurumu" value={formData.kapsamDurumu} onChange={handleChange}>
+              <option value="">Seçiniz...</option>
+              {KAPSAM_DURUMLARI.map(kd => <option key={kd} value={kd}>{kd}</option>)}
+            </select>
+          </div>
+
+          {/* 5. KATEGORİ */}
           <div className="form-group">
             <label>KATEGORİ</label>
             <select className="form-control" name="kategori" value={formData.kategori} onChange={handleChange}>
