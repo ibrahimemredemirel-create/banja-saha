@@ -1,23 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
-import { List, X, ExternalLink } from 'lucide-react';
+import { List, X, ExternalLink, Calendar, Check, ChevronDown } from 'lucide-react';
 import { getEffectiveToplamKort, sortVisitsLatestFirst, formatDateDisplay, normalizeDateToISO } from '../utils/excelExport';
 import { useNavigate } from 'react-router-dom';
+
+const MONTH_NAMES_TR = {
+  '01': 'Ocak',
+  '02': 'Şubat',
+  '03': 'Mart',
+  '04': 'Nisan',
+  '05': 'Mayıs',
+  '06': 'Haziran',
+  '07': 'Temmuz',
+  '08': 'Ağustos',
+  '09': 'Eylül',
+  '10': 'Ekim',
+  '11': 'Kasım',
+  '12': 'Aralık'
+};
+
+const formatYearMonthTR = (ym, currentYm) => {
+  if (ym === 'BELIRTILMEDI') return 'Tarihi Belirtilmeyenler';
+  const [yyyy, mm] = (ym || '').split('-');
+  if (!yyyy || !mm) return ym;
+  const label = `${MONTH_NAMES_TR[mm] || mm} ${yyyy}`;
+  return ym === currentYm ? `${label} (Bu Ay)` : label;
+};
 
 const DashboardPage = () => {
   const { facilities, visits } = useData();
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState('');
+  const [selectedMonths, setSelectedMonths] = useState([]); // Boş dizi = TÜM ZAMANLAR (ALL TIME)
+  const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [activeModalKey, setActiveModalKey] = useState(null);
+  const monthDropdownRef = useRef(null);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setActiveModalKey(null);
+        setShowMonthDropdown(false);
+      }
+    };
+    const handleClickOutside = (e) => {
+      if (monthDropdownRef.current && !monthDropdownRef.current.contains(e.target)) {
+        setShowMonthDropdown(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const registeredCities = Array.from(
@@ -28,19 +64,69 @@ const DashboardPage = () => {
     ? facilities.filter(f => f.il === selectedCity)
     : facilities;
 
-  const filteredVisits = visits.filter(v =>
+  // Current YYYY-MM for "BU AY YAPILAN ZİYARET SAYISI"
+  const currentYearMonth = new Date().toISOString().slice(0, 7);
+
+  // Mevcut ay + son 6 ay + verilerde geçen tüm ayları birleştir
+  const availableMonths = React.useMemo(() => {
+    const monthSet = new Set();
+    monthSet.add(currentYearMonth);
+
+    // Son 6 ayı her zaman seçeneklerde göster
+    const now = new Date();
+    for (let i = 1; i <= 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthSet.add(ym);
+    }
+
+    let hasUndated = false;
+    visits.forEach(v => {
+      const iso = normalizeDateToISO(v.ziyaretTarihi);
+      if (iso && /^\d{4}-\d{2}/.test(iso)) {
+        monthSet.add(iso.slice(0, 7));
+      } else {
+        hasUndated = true;
+      }
+    });
+
+    const sorted = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
+    if (hasUndated) {
+      sorted.push('BELIRTILMEDI');
+    }
+    return sorted;
+  }, [visits, currentYearMonth]);
+
+  const toggleMonthSelection = (ym) => {
+    setSelectedMonths(prev =>
+      prev.includes(ym) ? prev.filter(m => m !== ym) : [...prev, ym]
+    );
+  };
+
+  const selectAllTime = () => {
+    setSelectedMonths([]);
+  };
+
+  // İl filtresine uyan tüm ziyaretler
+  const cityFilteredVisits = visits.filter(v =>
     filteredFacilities.some(f => f.id === v.facilityId)
   );
 
-  // Current YYYY-MM for "BU AY YAPILAN ZİYARET SAYISI"
-  const currentYearMonth = new Date().toISOString().slice(0, 7);
+  // Zaman filtresi de uygulanmış ziyaretler (selectedMonths boşsa Tüm Zamanlar)
+  const filteredVisits = selectedMonths.length === 0
+    ? cityFilteredVisits
+    : cityFilteredVisits.filter(v => {
+        const iso = normalizeDateToISO(v.ziyaretTarihi);
+        const ym = iso && /^\d{4}-\d{2}/.test(iso) ? iso.slice(0, 7) : 'BELIRTILMEDI';
+        return selectedMonths.includes(ym);
+      });
 
   // Data subsets for each card
   const visitedFacilityIds = new Set(filteredVisits.map(v => v.facilityId));
   const visitedFacilitiesList = filteredFacilities.filter(f => visitedFacilityIds.has(f.id));
 
   const thisMonthVisitsList = sortVisitsLatestFirst(
-    filteredVisits.filter(v => normalizeDateToISO(v.ziyaretTarihi).startsWith(currentYearMonth))
+    cityFilteredVisits.filter(v => normalizeDateToISO(v.ziyaretTarihi).startsWith(currentYearMonth))
   );
   const allVisitsList = sortVisitsLatestFirst(filteredVisits);
 
@@ -217,17 +303,186 @@ const DashboardPage = () => {
                 {selectedCity ? `${selectedCity} Saha Raporu` : 'Tüm Türkiye Saha ve Kort Dashboard'}
               </h3>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>İL FİLTRESİ:</label>
-              <select
-                className="form-control"
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                style={{ minWidth: '180px', padding: '0.45rem 0.75rem' }}
-              >
-                <option value="">TÜM İLLER</option>
-                {registeredCities.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              {/* ÇOKLU SEÇİMLİ ZAMAN FİLTRESİ */}
+              <div ref={monthDropdownRef} style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    ZAMAN FİLTRESİ:
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowMonthDropdown(prev => !prev)}
+                    className="form-control"
+                    style={{
+                      minWidth: '230px',
+                      padding: '0.45rem 0.75rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.5rem',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      borderColor: selectedMonths.length > 0 ? 'var(--primary-color)' : 'var(--border-color)'
+                    }}
+                  >
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      fontSize: '0.83rem',
+                      fontWeight: 600,
+                      color: selectedMonths.length > 0 ? 'var(--primary-color)' : 'var(--text-main)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '195px'
+                    }}>
+                      <Calendar size={14} color="var(--primary-color)" style={{ flexShrink: 0 }} />
+                      {selectedMonths.length === 0
+                        ? 'TÜM ZAMANLAR (ALL TIME)'
+                        : selectedMonths.length === 1
+                          ? formatYearMonthTR(selectedMonths[0], currentYearMonth)
+                          : `${selectedMonths.length} Ay Seçili`}
+                    </span>
+                    <ChevronDown size={15} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                  </button>
+                </div>
+
+                {showMonthDropdown && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '0.4rem',
+                    width: '285px',
+                    maxHeight: '340px',
+                    overflowY: 'auto',
+                    backgroundColor: '#0c1821',
+                    border: '1px solid var(--primary-color)',
+                    borderRadius: '10px',
+                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.75)',
+                    zIndex: 120,
+                    padding: '0.45rem'
+                  }}>
+                    {/* TÜM ZAMANLAR (ALL TIME) SEÇENEĞİ */}
+                    <div
+                      onClick={selectAllTime}
+                      style={{
+                        padding: '0.6rem 0.75rem',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: selectedMonths.length === 0 ? 'rgba(0, 210, 255, 0.16)' : 'transparent',
+                        color: selectedMonths.length === 0 ? 'var(--primary-color)' : 'var(--text-main)',
+                        fontWeight: 700,
+                        fontSize: '0.83rem',
+                        borderBottom: '1px solid var(--border-subtle)',
+                        marginBottom: '0.3rem'
+                      }}
+                    >
+                      <span>TÜM ZAMANLAR (ALL TIME)</span>
+                      <div style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '4px',
+                        border: selectedMonths.length === 0 ? '1px solid var(--primary-color)' : '1px solid #334e62',
+                        backgroundColor: selectedMonths.length === 0 ? 'var(--primary-color)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {selectedMonths.length === 0 && <Check size={13} color="#051014" strokeWidth={3} />}
+                      </div>
+                    </div>
+
+                    <div style={{
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.04em'
+                    }}>
+                      AY SEÇİMİ (ÇOKLU SEÇİM YAPABİLİRSİNİZ)
+                    </div>
+
+                    {availableMonths.map(ym => {
+                      const isChecked = selectedMonths.includes(ym);
+                      const monthVisitCount = cityFilteredVisits.filter(v => {
+                        const iso = normalizeDateToISO(v.ziyaretTarihi);
+                        const vYm = iso && /^\d{4}-\d{2}/.test(iso) ? iso.slice(0, 7) : 'BELIRTILMEDI';
+                        return vYm === ym;
+                      }).length;
+
+                      return (
+                        <div
+                          key={ym}
+                          onClick={() => toggleMonthSelection(ym)}
+                          style={{
+                            padding: '0.55rem 0.75rem',
+                            borderRadius: '7px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: isChecked ? 'rgba(182, 255, 0, 0.12)' : 'transparent',
+                            color: isChecked ? 'var(--accent-lime)' : 'var(--text-main)',
+                            fontWeight: isChecked ? 700 : 500,
+                            fontSize: '0.82rem',
+                            marginBottom: '0.15rem'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span>{formatYearMonthTR(ym, currentYearMonth)}</span>
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: isChecked ? 'var(--accent-lime)' : 'var(--text-muted)',
+                              backgroundColor: '#081117',
+                              padding: '0.1rem 0.45rem',
+                              borderRadius: '999px',
+                              border: '1px solid var(--border-subtle)'
+                            }}>
+                              {monthVisitCount}
+                            </span>
+                          </div>
+
+                          <div style={{
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '4px',
+                            border: isChecked ? '1px solid var(--accent-lime)' : '1px solid #334e62',
+                            backgroundColor: isChecked ? 'var(--accent-lime)' : 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            {isChecked && <Check size={13} color="#051014" strokeWidth={3} />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* İL FİLTRESİ */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                  İL FİLTRESİ:
+                </label>
+                <select
+                  className="form-control"
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  style={{ minWidth: '170px', padding: '0.45rem 0.75rem' }}
+                >
+                  <option value="">TÜM İLLER</option>
+                  {registeredCities.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
             </div>
           </div>
 
