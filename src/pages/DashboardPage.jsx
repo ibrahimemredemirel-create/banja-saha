@@ -212,6 +212,35 @@ const DashboardPage = () => {
     filteredVisits.filter(v => v.ziyaretSonucu === 'OLUMSUZ')
   );
 
+  // Görüşme şekli (türü) bazında ziyaretler
+  const normalizeGorusmeSekli = (raw) => {
+    const s = (raw || '').toString().toLocaleUpperCase('tr-TR');
+    if (!s) return '';
+    if (s.includes('ONLİNE') || s.includes('ONLINE')) return 'ONLINE';
+    if (s.includes('YÜZ') || s.includes('YUZ')) return 'YUZYUZE';
+    if (s.includes('WHATSAPP') || s === 'WP') return 'WHATSAPP';
+    if (s.includes('TELEFON') || s === 'TEL') return 'TELEFON';
+    if (s.includes('POSTA') || s.includes('MAİL') || s.includes('MAIL')) return 'EPOSTA';
+    return '';
+  };
+  const GORUSME_TURU_CARDS = [
+    { key: 'GORUSME_ONLINE', code: 'ONLINE', label: 'ONLİNE', color: '#00d2ff' },
+    { key: 'GORUSME_YUZYUZE', code: 'YUZYUZE', label: 'YÜZ YÜZE', color: 'var(--accent-lime)' },
+    { key: 'GORUSME_TELEFON', code: 'TELEFON', label: 'TELEFON', color: '#38bdf8' },
+    { key: 'GORUSME_WHATSAPP', code: 'WHATSAPP', label: 'WHATSAPP', color: '#25d366' },
+    { key: 'GORUSME_EPOSTA', code: 'EPOSTA', label: 'E-POSTA', color: '#a78bfa' }
+  ].map(card => {
+    const items = sortVisitsLatestFirst(
+      filteredVisits.filter(v => normalizeGorusmeSekli(v.gorusmeSekli) === card.code)
+    );
+    return {
+      ...card,
+      items,
+      count: items.length,
+      facilityCount: new Set(items.map(v => v.facilityId)).size
+    };
+  });
+
   // KPI Counts
   const kayitliTesisSayisi = filteredFacilities.length;
   const ziyaretEdilenTesisSayisi = visitedFacilitiesList.length;
@@ -369,7 +398,13 @@ const DashboardPage = () => {
       title: 'Ziyaret Sonucu: Olumsuz',
       type: 'visit',
       items: olumsuzVisits
-    }
+    },
+    ...Object.fromEntries(
+      GORUSME_TURU_CARDS.map(card => [
+        card.key,
+        { title: `Görüşme Türü: ${card.label}`, type: 'visit', items: card.items }
+      ])
+    )
   };
 
   const activeModal = activeModalKey ? MODAL_CONFIG[activeModalKey] : null;
@@ -882,7 +917,26 @@ const DashboardPage = () => {
             {renderCardHeader('TOPLAM ZİYARET SAYISI', 'TOPLAM_ZIYARET')}
             <span className="stat-value">{toplamZiyaretSayisi}</span>
           </div>
+        </div>
 
+        {/* GÖRÜŞME TÜRÜ KARTLARI */}
+        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+          {GORUSME_TURU_CARDS.map(card => (
+            <div key={card.key} className="stat-card" style={{ borderLeft: `3px solid ${card.color}` }}>
+              {renderCardHeader(card.label, card.key)}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: card.color }}>{card.count}</span>
+                {card.count > 0 && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    ({card.facilityCount} Tesis)
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           <div className="stat-card" style={{ borderLeft: '3px solid #00d2ff' }}>
             {renderCardHeader('AÇIK KORTU OLAN TESİS SAYISI', 'ACIK_KORT')}
             <span className="stat-value">{acikKortluTesisSayisi}</span>
