@@ -484,7 +484,7 @@ const DashboardPage = () => {
   const activeModal = activeModalKey ? MODAL_CONFIG[activeModalKey] : null;
 
   const renderCardHeader = (title, modalKey) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+    <div className="stat-header">
       <span className="stat-title">{title}</span>
       <button
         type="button"
@@ -501,7 +501,8 @@ const DashboardPage = () => {
           justifyContent: 'center',
           cursor: 'pointer',
           flexShrink: 0,
-          transition: 'all 0.2s'
+          transition: 'all 0.2s',
+          marginTop: '-2px'
         }}
         title="Detaylı Listeyi Gör"
       >
@@ -970,103 +971,118 @@ const DashboardPage = () => {
       </div>
 
       <div className="page-scroll-body">
-        {/* 8 Ana KPI Kartı (Yukarıda 4, Altta 4 Kart) */}
+        {/* 1. GENEL SAHA ÖZETİ (4 KART) */}
+        <div style={{ marginBottom: '0.65rem' }}>
+          <span className="section-label" style={{ margin: 0, fontSize: '0.78rem', fontWeight: 700 }}>
+            GENEL SAHA & ZİYARET ÖZETİ
+          </span>
+        </div>
         <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           <div className="stat-card" style={{ borderLeft: '3px solid var(--primary-color)' }}>
             {renderCardHeader('KAYITLI TESİS SAYISI', 'KAYITLI_TESIS')}
-            <span className="stat-value">{kayitliTesisSayisi}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value">{kayitliTesisSayisi}</span>
+            </div>
           </div>
 
           <div className="stat-card" style={{ borderLeft: '3px solid #38bdf8' }}>
             {renderCardHeader('ZİYARET EDİLEN TESİS SAYISI', 'ZIYARET_EDILEN_TESIS')}
-            <span className="stat-value" style={{ color: '#38bdf8' }}>{ziyaretEdilenTesisSayisi}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: '#38bdf8' }}>{ziyaretEdilenTesisSayisi}</span>
+            </div>
           </div>
 
           <div className="stat-card" style={{ borderLeft: '3px solid var(--accent-lime)' }}>
             {renderCardHeader('BU AY YAPILAN ZİYARET SAYISI', 'BU_AY_ZIYARET')}
-            <span className="stat-value" style={{ color: 'var(--accent-lime)' }}>{buAyZiyaretSayisi}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: 'var(--accent-lime)' }}>{buAyZiyaretSayisi}</span>
+            </div>
           </div>
 
           <div className="stat-card" style={{ borderLeft: '3px solid var(--primary-color)' }}>
             {renderCardHeader('TOPLAM ZİYARET SAYISI', 'TOPLAM_ZIYARET')}
-            <span className="stat-value">{toplamZiyaretSayisi}</span>
-          </div>
-        </div>
-
-        {/* SÖZLEŞMELİ TESİSLER & ANLAŞMA ÖZETİ */}
-        <div className="dashboard-card" style={{ marginBottom: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.85rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <FileCheck size={18} color="var(--accent-lime)" />
-              <span className="section-label" style={{ margin: 0 }}>SÖZLEŞMELİ TESİSLER & ANLAŞMA TAKİBİ</span>
-            </div>
-            <button
-              type="button"
-              className="btn btn-outline"
-              style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-              onClick={() => navigate('/contracts')}
-            >
-              <span>Sözleşmeler Menüsü</span>
-              <ArrowRight size={12} />
-            </button>
-          </div>
-
-          <div className="stats-grid" style={{ marginBottom: 0, gridTemplateColumns: 'repeat(4, 1fr)' }}>
-            <div className="stat-card" style={{ borderLeft: '3px solid var(--accent-lime)' }}>
-              {renderCardHeader('TOPLAM SÖZLEŞMELİ TESİS', 'SOZLESMELI_TESIS')}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
-                <span className="stat-value" style={{ color: 'var(--accent-lime)' }}>{allTimeContractFacilityIds.size}</span>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  ({facFilteredContracts.length} Sözleşme - All Time)
-                </span>
-              </div>
-            </div>
-
-            <div className="stat-card" style={{ borderLeft: '3px solid #00d2ff' }}>
-              {renderCardHeader(selectedMonths.length === 0 ? 'İMZALANAN SÖZLEŞME (ALL TIME)' : 'DÖNEMDE İMZALANAN SÖZLEŞME', 'DONEM_SOZLESMELER')}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
-                <span className="stat-value" style={{ color: '#00d2ff' }}>{filteredContracts.length}</span>
-                {filteredContracts.length > 0 && (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    ({periodContractFacilityIds.size} Tesis)
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="stat-card" style={{ borderLeft: '3px solid #38bdf8' }}>
-              {renderCardHeader('BU AY İMZALANAN SÖZLEŞME', 'BU_AY_SOZLESMELER')}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
-                <span className="stat-value" style={{ color: '#38bdf8' }}>{thisMonthContracts.length}</span>
-                {thisMonthContracts.length > 0 && (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    ({new Set(thisMonthContracts.map(c => c.facilityId || c.tesisAdi)).size} Tesis)
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="stat-card" style={{ borderLeft: '3px solid #f59e0b' }}>
-              {renderCardHeader('AKTİF / YÜRÜRLÜKTEKİ SÖZLEŞME', 'AKTIF_SOZLESMELER')}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
-                <span className="stat-value" style={{ color: '#f59e0b' }}>{activeContracts.length}</span>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  ({activeContractFacilityIds.size} Tesis)
-                </span>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value">{toplamZiyaretSayisi}</span>
             </div>
           </div>
         </div>
 
-        {/* GÖRÜŞME TÜRÜ KARTLARI */}
+        {/* 2. SÖZLEŞMELİ TESİSLER & ANLAŞMA ÖZETİ (4 KART) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', marginTop: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <span className="section-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', margin: 0, fontSize: '0.78rem', fontWeight: 700 }}>
+            <FileCheck size={15} color="var(--accent-lime)" /> SÖZLEŞMELİ TESİSLER & ANLAŞMA TAKİBİ
+          </span>
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: '0.2rem 0.65rem', fontSize: '0.74rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+            onClick={() => navigate('/contracts')}
+          >
+            <span>Sözleşmeler Menüsü</span>
+            <ArrowRight size={12} />
+          </button>
+        </div>
+
+        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="stat-card" style={{ borderLeft: '3px solid var(--accent-lime)' }}>
+            {renderCardHeader('TOPLAM SÖZLEŞMELİ TESİS', 'SOZLESMELI_TESIS')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: 'var(--accent-lime)' }}>{allTimeContractFacilityIds.size}</span>
+              <span className="stat-subtext">
+                ({facFilteredContracts.length} Sözleşme - All Time)
+              </span>
+            </div>
+          </div>
+
+          <div className="stat-card" style={{ borderLeft: '3px solid #00d2ff' }}>
+            {renderCardHeader(selectedMonths.length === 0 ? 'İMZALANAN SÖZLEŞME (ALL TIME)' : 'DÖNEMDE İMZALANAN SÖZLEŞME', 'DONEM_SOZLESMELER')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: '#00d2ff' }}>{filteredContracts.length}</span>
+              {filteredContracts.length > 0 && (
+                <span className="stat-subtext">
+                  ({periodContractFacilityIds.size} Tesis)
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="stat-card" style={{ borderLeft: '3px solid #38bdf8' }}>
+            {renderCardHeader('BU AY İMZALANAN SÖZLEŞME', 'BU_AY_SOZLESMELER')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: '#38bdf8' }}>{thisMonthContracts.length}</span>
+              {thisMonthContracts.length > 0 && (
+                <span className="stat-subtext">
+                  ({new Set(thisMonthContracts.map(c => c.facilityId || c.tesisAdi)).size} Tesis)
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="stat-card" style={{ borderLeft: '3px solid #f59e0b' }}>
+            {renderCardHeader('AKTİF / YÜRÜRLÜKTEKİ SÖZLEŞME', 'AKTIF_SOZLESMELER')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: '#f59e0b' }}>{activeContracts.length}</span>
+              <span className="stat-subtext">
+                ({activeContractFacilityIds.size} Tesis)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. GÖRÜŞME TÜRLERİ (5 KART) */}
+        <div style={{ marginBottom: '0.65rem', marginTop: '0.4rem' }}>
+          <span className="section-label" style={{ margin: 0, fontSize: '0.78rem', fontWeight: 700 }}>
+            GÖRÜŞME TÜRLERİ ÖZETİ
+          </span>
+        </div>
         <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
           {GORUSME_TURU_CARDS.map(card => (
             <div key={card.key} className="stat-card" style={{ borderLeft: `3px solid ${card.color}` }}>
               {renderCardHeader(card.label, card.key)}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
                 <span className="stat-value" style={{ color: card.color }}>{card.count}</span>
                 {card.count > 0 && (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  <span className="stat-subtext">
                     ({card.facilityCount} Tesis)
                   </span>
                 )}
@@ -1075,91 +1091,106 @@ const DashboardPage = () => {
           ))}
         </div>
 
+        {/* 4. KORT TÜRLERİ (4 KART) */}
+        <div style={{ marginBottom: '0.65rem', marginTop: '0.4rem' }}>
+          <span className="section-label" style={{ margin: 0, fontSize: '0.78rem', fontWeight: 700 }}>
+            KORT TÜRÜ BULUNAN TESİSLER
+          </span>
+        </div>
         <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           <div className="stat-card" style={{ borderLeft: '3px solid #00d2ff' }}>
             {renderCardHeader('AÇIK KORTU OLAN TESİS SAYISI', 'ACIK_KORT')}
-            <span className="stat-value">{acikKortluTesisSayisi}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value">{acikKortluTesisSayisi}</span>
+            </div>
           </div>
 
           <div className="stat-card" style={{ borderLeft: '3px solid #38bdf8' }}>
             {renderCardHeader('KAPALI KORTU OLAN TESİS SAYISI', 'KAPALI_KORT')}
-            <span className="stat-value">{kapaliKortluTesisSayisi}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value">{kapaliKortluTesisSayisi}</span>
+            </div>
           </div>
 
           <div className="stat-card" style={{ borderLeft: '3px solid var(--accent-lime)' }}>
             {renderCardHeader('DOUBLE KORTU OLAN TESİS', 'DOUBLE_KORT')}
-            <span className="stat-value">{doubleKortluTesisSayisi}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value">{doubleKortluTesisSayisi}</span>
+            </div>
           </div>
 
           <div className="stat-card" style={{ borderLeft: '3px solid #a78bfa' }}>
             {renderCardHeader('SİNGLE KORTU OLAN TESİS', 'SINGLE_KORT')}
-            <span className="stat-value">{singleKortluTesisSayisi}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value">{singleKortluTesisSayisi}</span>
+            </div>
           </div>
         </div>
 
-        {/* 9. ZİYARET SONUCU KARTI */}
-        <div className="dashboard-card" style={{ marginBottom: 0 }}>
-          <span className="section-label" style={{ marginBottom: '0.85rem' }}>ZİYARET SONUÇ ÖZETİ</span>
-
-          <div className="stats-grid" style={{ marginBottom: 0, gridTemplateColumns: 'repeat(5, 1fr)' }}>
-            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid #00d2ff' }}>
-              {renderCardHeader('TEKLİF VERİLDİ', 'TEKLIF_VERILDI')}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
-                <span className="stat-value" style={{ color: '#00d2ff' }}>{teklifVerildiCount}</span>
-                {teklifVerildiCount > 0 && (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    ({teklifVerildiFacilityCount} Tesis)
-                  </span>
-                )}
-              </div>
+        {/* 5. ZİYARET SONUÇ ÖZETİ (5 KART) */}
+        <div style={{ marginBottom: '0.65rem', marginTop: '0.4rem' }}>
+          <span className="section-label" style={{ margin: 0, fontSize: '0.78rem', fontWeight: 700 }}>
+            ZİYARET SONUÇ ÖZETİ
+          </span>
+        </div>
+        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', marginBottom: 0 }}>
+          <div className="stat-card" style={{ borderLeft: '3px solid #00d2ff' }}>
+            {renderCardHeader('TEKLİF VERİLDİ', 'TEKLIF_VERILDI')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: '#00d2ff' }}>{teklifVerildiCount}</span>
+              {teklifVerildiCount > 0 && (
+                <span className="stat-subtext">
+                  ({teklifVerildiFacilityCount} Tesis)
+                </span>
+              )}
             </div>
+          </div>
 
-            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid #b6ff00' }}>
-              {renderCardHeader('TEKLİF VERİLMEDİ / VERİLECEK', 'TEKLIF_VERILMEDI')}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
-                <span className="stat-value" style={{ color: '#b6ff00' }}>{teklifVerilmediCount}</span>
-                {teklifVerilmediCount > 0 && (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    ({teklifVerilmediFacilityCount} Tesis)
-                  </span>
-                )}
-              </div>
+          <div className="stat-card" style={{ borderLeft: '3px solid #b6ff00' }}>
+            {renderCardHeader('TEKLİF VERİLMEDİ / VERİLECEK', 'TEKLIF_VERILMEDI')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: '#b6ff00' }}>{teklifVerilmediCount}</span>
+              {teklifVerilmediCount > 0 && (
+                <span className="stat-subtext">
+                  ({teklifVerilmediFacilityCount} Tesis)
+                </span>
+              )}
             </div>
+          </div>
 
-            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid #38bdf8' }}>
-              {renderCardHeader('GÖRÜŞME DEVAM EDİYOR', 'GORUSME_DEVAM')}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
-                <span className="stat-value" style={{ color: '#38bdf8' }}>{gorusmeDevamCount}</span>
-                {gorusmeDevamCount > 0 && (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    ({gorusmeDevamFacilityCount} Tesis)
-                  </span>
-                )}
-              </div>
+          <div className="stat-card" style={{ borderLeft: '3px solid #38bdf8' }}>
+            {renderCardHeader('GÖRÜŞME DEVAM EDİYOR', 'GORUSME_DEVAM')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: '#38bdf8' }}>{gorusmeDevamCount}</span>
+              {gorusmeDevamCount > 0 && (
+                <span className="stat-subtext">
+                  ({gorusmeDevamFacilityCount} Tesis)
+                </span>
+              )}
             </div>
+          </div>
 
-            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid var(--accent-lime)' }}>
-              {renderCardHeader('SÖZLEŞME İMZALANDI', 'SOZLESME_IMZALANDI')}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
-                <span className="stat-value" style={{ color: 'var(--accent-lime)' }}>{sozlesmeImzalandiCount}</span>
-                {sozlesmeImzalandiCount > 0 && (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    ({sozlesmeImzalandiFacilityCount} Tesis)
-                  </span>
-                )}
-              </div>
+          <div className="stat-card" style={{ borderLeft: '3px solid var(--accent-lime)' }}>
+            {renderCardHeader('SÖZLEŞME İMZALANDI', 'SOZLESME_IMZALANDI')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: 'var(--accent-lime)' }}>{sozlesmeImzalandiCount}</span>
+              {sozlesmeImzalandiCount > 0 && (
+                <span className="stat-subtext">
+                  ({sozlesmeImzalandiFacilityCount} Tesis)
+                </span>
+              )}
             </div>
+          </div>
 
-            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid #f87171' }}>
-              {renderCardHeader('OLUMSUZ', 'OLUMSUZ')}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
-                <span className="stat-value" style={{ color: '#f87171' }}>{olumsuzCount}</span>
-                {olumsuzCount > 0 && (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    ({olumsuzFacilityCount} Tesis)
-                  </span>
-                )}
-              </div>
+          <div className="stat-card" style={{ borderLeft: '3px solid #f87171' }}>
+            {renderCardHeader('OLUMSUZ', 'OLUMSUZ')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', marginTop: 'auto' }}>
+              <span className="stat-value" style={{ color: '#f87171' }}>{olumsuzCount}</span>
+              {olumsuzCount > 0 && (
+                <span className="stat-subtext">
+                  ({olumsuzFacilityCount} Tesis)
+                </span>
+              )}
             </div>
           </div>
         </div>

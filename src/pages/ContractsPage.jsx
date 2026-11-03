@@ -226,28 +226,28 @@ export default function ContractsPage() {
 
           {/* Hızlı Özet Sayaçları */}
           <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginTop: '1rem', marginBottom: 0 }}>
-            <div className="stat-card" style={{ borderLeft: '3px solid var(--accent-lime)', padding: '0.75rem 1rem' }}>
+            <div className="stat-card" style={{ borderLeft: '3px solid var(--accent-lime)', padding: '0.75rem 1rem', minHeight: 'auto' }}>
               <span className="stat-title">SÖZLEŞMELİ TESİS</span>
               <span className="stat-value" style={{ color: 'var(--accent-lime)', fontSize: '1.45rem' }}>
                 {stats.uniqueFacilities}
               </span>
             </div>
 
-            <div className="stat-card" style={{ borderLeft: '3px solid #00d2ff', padding: '0.75rem 1rem' }}>
+            <div className="stat-card" style={{ borderLeft: '3px solid #00d2ff', padding: '0.75rem 1rem', minHeight: 'auto' }}>
               <span className="stat-title">AKTİF SÖZLEŞMELER</span>
               <span className="stat-value" style={{ color: '#00d2ff', fontSize: '1.45rem' }}>
                 {stats.active}
               </span>
             </div>
 
-            <div className="stat-card" style={{ borderLeft: '3px solid #f59e0b', padding: '0.75rem 1rem' }}>
+            <div className="stat-card" style={{ borderLeft: '3px solid #f59e0b', padding: '0.75rem 1rem', minHeight: 'auto' }}>
               <span className="stat-title">BİTİŞİ YAKLAŞAN (30 GÜN)</span>
               <span className="stat-value" style={{ color: '#f59e0b', fontSize: '1.45rem' }}>
                 {stats.expiringSoon}
               </span>
             </div>
 
-            <div className="stat-card" style={{ borderLeft: '3px solid var(--danger)', padding: '0.75rem 1rem' }}>
+            <div className="stat-card" style={{ borderLeft: '3px solid var(--danger)', padding: '0.75rem 1rem', minHeight: 'auto' }}>
               <span className="stat-title">SÜRESİ DOLAN / FESİH</span>
               <span className="stat-value" style={{ color: 'var(--danger)', fontSize: '1.45rem' }}>
                 {stats.expired}
