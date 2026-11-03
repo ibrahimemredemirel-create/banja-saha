@@ -103,9 +103,11 @@ export default async function handler(req, res) {
       const store = await getStoreMap();
       const hasFacilitiesKey = Object.prototype.hasOwnProperty.call(store, 'facilities');
       const hasVisitsKey = Object.prototype.hasOwnProperty.call(store, 'visits');
+      const hasContractsKey = Object.prototype.hasOwnProperty.call(store, 'contracts');
 
       const facilities = Array.isArray(store.facilities) ? store.facilities : [];
       const visits = Array.isArray(store.visits) ? store.visits : [];
+      const contracts = Array.isArray(store.contracts) ? store.contracts : [];
       const employees = Array.isArray(store.employees) && store.employees.length > 0
         ? store.employees
         : DEFAULT_EMPLOYEES;
@@ -114,9 +116,10 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({
         ok: true,
-        initialized: hasFacilitiesKey || hasVisitsKey,
+        initialized: hasFacilitiesKey || hasVisitsKey || hasContractsKey,
         facilities,
         visits,
+        contracts,
         employees
       }));
       return;
@@ -145,6 +148,7 @@ export default async function handler(req, res) {
 
       const currentFacilities = Array.isArray(store.facilities) ? store.facilities : [];
       const currentVisits = Array.isArray(store.visits) ? store.visits : [];
+      const currentContracts = Array.isArray(store.contracts) ? store.contracts : [];
       const currentEmployees = Array.isArray(store.employees) && store.employees.length > 0
         ? store.employees
         : DEFAULT_EMPLOYEES;
@@ -186,6 +190,9 @@ export default async function handler(req, res) {
         if (Array.isArray(body.visits)) {
           await setStoreKey('visits', body.visits);
         }
+        if (Array.isArray(body.contracts)) {
+          await setStoreKey('contracts', body.contracts);
+        }
         if (Array.isArray(body.employees)) {
           await setStoreKey('employees', body.employees);
         }
@@ -202,8 +209,10 @@ export default async function handler(req, res) {
       } else if (action === 'delete_facility') {
         const nextFac = currentFacilities.filter(f => f.id !== body.id);
         const nextVis = currentVisits.filter(v => v.facilityId !== body.id);
+        const nextCon = currentContracts.filter(c => c.facilityId !== body.id);
         await setStoreKey('facilities', nextFac);
         await setStoreKey('visits', nextVis);
+        await setStoreKey('contracts', nextCon);
       } else if (action === 'add_visit') {
         const next = [body.visit, ...currentVisits];
         await setStoreKey('visits', next);
@@ -217,6 +226,19 @@ export default async function handler(req, res) {
       } else if (action === 'delete_visit') {
         const next = currentVisits.filter(v => v.id !== body.id);
         await setStoreKey('visits', next);
+      } else if (action === 'add_contract') {
+        const next = [body.contract, ...currentContracts];
+        await setStoreKey('contracts', next);
+      } else if (action === 'bulk_add_contracts') {
+        const incoming = Array.isArray(body.contracts) ? body.contracts : [];
+        const next = [...incoming, ...currentContracts];
+        await setStoreKey('contracts', next);
+      } else if (action === 'update_contract') {
+        const next = currentContracts.map(c => c.id === body.id ? { ...c, ...body.contract, id: body.id } : c);
+        await setStoreKey('contracts', next);
+      } else if (action === 'delete_contract') {
+        const next = currentContracts.filter(c => c.id !== body.id);
+        await setStoreKey('contracts', next);
       } else if (action === 'save_employees') {
         if (Array.isArray(body.employees)) {
           await setStoreKey('employees', body.employees);
@@ -224,6 +246,7 @@ export default async function handler(req, res) {
       } else if (action === 'reset_all') {
         await setStoreKey('facilities', []);
         await setStoreKey('visits', []);
+        await setStoreKey('contracts', []);
       }
 
       const updated = await getStoreMap();
@@ -233,6 +256,7 @@ export default async function handler(req, res) {
         ok: true,
         facilities: Array.isArray(updated.facilities) ? updated.facilities : currentFacilities,
         visits: Array.isArray(updated.visits) ? updated.visits : currentVisits,
+        contracts: Array.isArray(updated.contracts) ? updated.contracts : currentContracts,
         employees: Array.isArray(updated.employees) && updated.employees.length > 0 ? updated.employees : currentEmployees
       }));
       return;

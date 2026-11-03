@@ -20,6 +20,7 @@ const ZIYARET_SONUCLARI = [
   'TEKLİF VERİLDİ',
   'TEKLİF VERİLECEK',
   'TEKLİF VERİLMEDİ',
+  'SÖZLEŞME İMZALANDI',
   'OLUMSUZ'
 ];
 

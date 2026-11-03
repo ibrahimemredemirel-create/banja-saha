@@ -5,6 +5,7 @@ import {
   PlusCircle,
   ListFilter,
   FileBarChart2,
+  FileCheck,
   Smartphone,
   Settings,
   LogOut,
@@ -142,6 +143,14 @@ const Layout = () => {
         >
           <FileBarChart2 size={18} />
           Tesis Bazlı Rapor
+        </NavLink>
+
+        <NavLink 
+          to="/contracts" 
+          className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+        >
+          <FileCheck size={18} />
+          Sözleşmeli Tesisler
         </NavLink>
 
         <NavLink 

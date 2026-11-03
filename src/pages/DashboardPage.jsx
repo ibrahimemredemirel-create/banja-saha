@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
-import { List, X, ExternalLink, Calendar, Check, ChevronDown, RotateCcw, MapPin, Tag, Flame } from 'lucide-react';
+import { List, X, ExternalLink, Calendar, Check, ChevronDown, RotateCcw, MapPin, Tag, Flame, FileCheck, ArrowRight } from 'lucide-react';
 import { getEffectiveToplamKort, sortVisitsLatestFirst, formatDateDisplay, normalizeDateToISO, normalizeKategori } from '../utils/excelExport';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,7 +28,7 @@ const formatYearMonthTR = (ym, currentYm) => {
 };
 
 const DashboardPage = () => {
-  const { facilities, visits } = useData();
+  const { facilities, visits, contracts = [] } = useData();
   const navigate = useNavigate();
   const [selectedCities, setSelectedCities] = useState([]); // Boş dizi = TÜM İLLER
   const [selectedMonths, setSelectedMonths] = useState([]); // Boş dizi = TÜM ZAMANLAR (ALL TIME)
@@ -152,12 +152,19 @@ const DashboardPage = () => {
       }
     });
 
+    contracts.forEach(c => {
+      const iso = normalizeDateToISO(c.sozlesmeTarihi || c.baslangicTarihi);
+      if (iso && /^\d{4}-\d{2}/.test(iso)) {
+        monthSet.add(iso.slice(0, 7));
+      }
+    });
+
     const sorted = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
     if (hasUndated) {
       sorted.push('BELIRTILMEDI');
     }
     return sorted;
-  }, [visits, currentYearMonth]);
+  }, [visits, contracts, currentYearMonth]);
 
   const toggleMonthSelection = (ym) => {
     setSelectedMonths(prev =>
@@ -211,6 +218,46 @@ const DashboardPage = () => {
   const olumsuzVisits = sortVisitsLatestFirst(
     filteredVisits.filter(v => v.ziyaretSonucu === 'OLUMSUZ')
   );
+  const sozlesmeImzalandiVisits = sortVisitsLatestFirst(
+    filteredVisits.filter(v => v.ziyaretSonucu === 'SÖZLEŞME İMZALANDI')
+  );
+
+  // --- SÖZLEŞME VERİLERİ (CONTRACTS) ---
+  // İl ve kategori filtresine uyan sözleşmeler
+  const facFilteredContracts = contracts.filter(c => {
+    if (!c.facilityId && c.tesisAdi) {
+      return filteredFacilities.some(f => (f.tesis || '').trim().toLocaleLowerCase('tr-TR') === (c.tesisAdi || '').trim().toLocaleLowerCase('tr-TR'));
+    }
+    return filteredFacilities.some(f => f.id === c.facilityId);
+  });
+
+  // Zaman filtresi uygulanmış sözleşmeler (İmza / başlangıç tarihine göre)
+  const filteredContracts = selectedMonths.length === 0
+    ? facFilteredContracts
+    : facFilteredContracts.filter(c => {
+        const iso = normalizeDateToISO(c.sozlesmeTarihi || c.baslangicTarihi);
+        const ym = iso && /^\d{4}-\d{2}/.test(iso) ? iso.slice(0, 7) : 'BELIRTILMEDI';
+        return selectedMonths.includes(ym);
+      });
+
+  // Bu ay imzalanan sözleşmeler
+  const thisMonthContracts = facFilteredContracts.filter(c => {
+    const iso = normalizeDateToISO(c.sozlesmeTarihi || c.baslangicTarihi);
+    return iso && iso.startsWith(currentYearMonth);
+  });
+
+  // Aktif sözleşmeler (Durumu aktif ve süresi dolmamış olanlar)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const activeContracts = facFilteredContracts.filter(c => {
+    if (c.durum === 'FESHEDİLDİ' || c.durum === 'SÜRESİ DOLDU') return false;
+    if (c.bitisTarihi && c.bitisTarihi < todayStr) return false;
+    return true;
+  });
+
+  // Tekil sözleşmeli tesis sayıları
+  const allTimeContractFacilityIds = new Set(facFilteredContracts.map(c => c.facilityId || c.tesisAdi));
+  const periodContractFacilityIds = new Set(filteredContracts.map(c => c.facilityId || c.tesisAdi));
+  const activeContractFacilityIds = new Set(activeContracts.map(c => c.facilityId || c.tesisAdi));
 
   // Görüşme şekli (türü) bazında ziyaretler
   const normalizeGorusmeSekli = (raw) => {
@@ -254,11 +301,13 @@ const DashboardPage = () => {
   const teklifVerildiCount = teklifVerildiVisits.length;
   const teklifVerilmediCount = teklifVerilmediVisits.length;
   const gorusmeDevamCount = gorusmeDevamVisits.length;
+  const sozlesmeImzalandiCount = sozlesmeImzalandiVisits.length;
   const olumsuzCount = olumsuzVisits.length;
 
   const teklifVerildiFacilityCount = new Set(teklifVerildiVisits.map(v => v.facilityId)).size;
   const teklifVerilmediFacilityCount = new Set(teklifVerilmediVisits.map(v => v.facilityId)).size;
   const gorusmeDevamFacilityCount = new Set(gorusmeDevamVisits.map(v => v.facilityId)).size;
+  const sozlesmeImzalandiFacilityCount = new Set(sozlesmeImzalandiVisits.map(v => v.facilityId)).size;
   const olumsuzFacilityCount = new Set(olumsuzVisits.map(v => v.facilityId)).size;
 
   // Ziyaret listesini tesislere göre grupla
@@ -398,6 +447,31 @@ const DashboardPage = () => {
       title: 'Ziyaret Sonucu: Olumsuz',
       type: 'visit',
       items: olumsuzVisits
+    },
+    SOZLESME_IMZALANDI: {
+      title: 'Ziyaret Sonucu: Sözleşme İmzalandı',
+      type: 'visit',
+      items: sozlesmeImzalandiVisits
+    },
+    SOZLESMELI_TESIS: {
+      title: 'Tüm Sözleşmeli Tesisler (All-Time)',
+      type: 'contract',
+      items: facFilteredContracts
+    },
+    DONEM_SOZLESMELER: {
+      title: selectedMonths.length === 0 ? 'İmzalanan Tüm Sözleşmeler' : 'Seçili Dönemde İmzalanan Sözleşmeler',
+      type: 'contract',
+      items: filteredContracts
+    },
+    BU_AY_SOZLESMELER: {
+      title: 'Bu Ay İmzalanan Sözleşmeler',
+      type: 'contract',
+      items: thisMonthContracts
+    },
+    AKTIF_SOZLESMELER: {
+      title: 'Aktif Sözleşmeler',
+      type: 'contract',
+      items: activeContracts
     },
     ...Object.fromEntries(
       GORUSME_TURU_CARDS.map(card => [
@@ -919,6 +993,71 @@ const DashboardPage = () => {
           </div>
         </div>
 
+        {/* SÖZLEŞMELİ TESİSLER & ANLAŞMA ÖZETİ */}
+        <div className="dashboard-card" style={{ marginBottom: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FileCheck size={18} color="var(--accent-lime)" />
+              <span className="section-label" style={{ margin: 0 }}>SÖZLEŞMELİ TESİSLER & ANLAŞMA TAKİBİ</span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-outline"
+              style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+              onClick={() => navigate('/contracts')}
+            >
+              <span>Sözleşmeler Menüsü</span>
+              <ArrowRight size={12} />
+            </button>
+          </div>
+
+          <div className="stats-grid" style={{ marginBottom: 0, gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            <div className="stat-card" style={{ borderLeft: '3px solid var(--accent-lime)' }}>
+              {renderCardHeader('TOPLAM SÖZLEŞMELİ TESİS', 'SOZLESMELI_TESIS')}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: 'var(--accent-lime)' }}>{allTimeContractFacilityIds.size}</span>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  ({facFilteredContracts.length} Sözleşme - All Time)
+                </span>
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ borderLeft: '3px solid #00d2ff' }}>
+              {renderCardHeader(selectedMonths.length === 0 ? 'İMZALANAN SÖZLEŞME (ALL TIME)' : 'DÖNEMDE İMZALANAN SÖZLEŞME', 'DONEM_SOZLESMELER')}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: '#00d2ff' }}>{filteredContracts.length}</span>
+                {filteredContracts.length > 0 && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    ({periodContractFacilityIds.size} Tesis)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ borderLeft: '3px solid #38bdf8' }}>
+              {renderCardHeader('BU AY İMZALANAN SÖZLEŞME', 'BU_AY_SOZLESMELER')}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: '#38bdf8' }}>{thisMonthContracts.length}</span>
+                {thisMonthContracts.length > 0 && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    ({new Set(thisMonthContracts.map(c => c.facilityId || c.tesisAdi)).size} Tesis)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ borderLeft: '3px solid #f59e0b' }}>
+              {renderCardHeader('AKTİF / YÜRÜRLÜKTEKİ SÖZLEŞME', 'AKTIF_SOZLESMELER')}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: '#f59e0b' }}>{activeContracts.length}</span>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  ({activeContractFacilityIds.size} Tesis)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* GÖRÜŞME TÜRÜ KARTLARI */}
         <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
           {GORUSME_TURU_CARDS.map(card => (
@@ -962,7 +1101,7 @@ const DashboardPage = () => {
         <div className="dashboard-card" style={{ marginBottom: 0 }}>
           <span className="section-label" style={{ marginBottom: '0.85rem' }}>ZİYARET SONUÇ ÖZETİ</span>
 
-          <div className="stats-grid" style={{ marginBottom: 0, gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="stats-grid" style={{ marginBottom: 0, gridTemplateColumns: 'repeat(5, 1fr)' }}>
             <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid #00d2ff' }}>
               {renderCardHeader('TEKLİF VERİLDİ', 'TEKLIF_VERILDI')}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
@@ -994,6 +1133,18 @@ const DashboardPage = () => {
                 {gorusmeDevamCount > 0 && (
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                     ({gorusmeDevamFacilityCount} Tesis)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ backgroundColor: 'var(--card-sub-bg)', borderLeft: '3px solid var(--accent-lime)' }}>
+              {renderCardHeader('SÖZLEŞME İMZALANDI', 'SOZLESME_IMZALANDI')}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+                <span className="stat-value" style={{ color: 'var(--accent-lime)' }}>{sozlesmeImzalandiCount}</span>
+                {sozlesmeImzalandiCount > 0 && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    ({sozlesmeImzalandiFacilityCount} Tesis)
                   </span>
                 )}
               </div>
@@ -1182,7 +1333,9 @@ const DashboardPage = () => {
                 <h3 style={{ margin: 0, fontSize: '1.05rem' }}>
                   {activeModal.type === 'visit'
                     ? `${activeModal.title} (${groupVisitsByFacility(activeModal.items).length} Tesis / ${activeModal.items.length} Görüşme)`
-                    : `${activeModal.title} (${activeModal.items.length})`}
+                    : activeModal.type === 'contract'
+                      ? `${activeModal.title} (${new Set(activeModal.items.map(c => c.facilityId || c.tesisAdi)).size} Tesis / ${activeModal.items.length} Sözleşme)`
+                      : `${activeModal.title} (${activeModal.items.length})`}
                 </h3>
               </div>
 
@@ -1335,6 +1488,107 @@ const DashboardPage = () => {
                                 onClick={() => navigate('/facility-report', { state: { selectedFacilityId: f.id } })}
                               >
                                 <ExternalLink size={12} /> Rapor
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : activeModal.type === 'contract' ? (
+                <div className="table-container" style={{ overflowX: 'hidden' }}>
+                  <table style={{ width: '100%', whiteSpace: 'normal', tableLayout: 'fixed' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '24%', padding: '0.65rem 0.6rem', fontSize: '0.76rem' }}>TESİS ADI</th>
+                        <th style={{ width: '11%', padding: '0.65rem 0.5rem', fontSize: '0.76rem' }}>İL / İLÇE</th>
+                        <th style={{ width: '10%', padding: '0.65rem 0.5rem', fontSize: '0.76rem' }}>İMZA TARİHİ</th>
+                        <th style={{ width: '10%', padding: '0.65rem 0.5rem', fontSize: '0.76rem' }}>BAŞLANGIÇ</th>
+                        <th style={{ width: '10%', padding: '0.65rem 0.5rem', fontSize: '0.76rem' }}>BİTİŞ</th>
+                        <th style={{ width: '13%', padding: '0.65rem 0.5rem', fontSize: '0.76rem' }}>DURUM</th>
+                        <th style={{ width: '11%', padding: '0.65rem 0.5rem', fontSize: '0.76rem' }}>BEDEL / MODEL</th>
+                        <th style={{ width: '11%', padding: '0.65rem 0.4rem', fontSize: '0.76rem', textAlign: 'right' }}>İŞLEM</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeModal.items.map(c => {
+                        const fac = facilities.find(f => f.id === c.facilityId || (f.tesis && f.tesis.toLocaleLowerCase('tr-TR') === (c.tesisAdi || '').toLocaleLowerCase('tr-TR')));
+                        
+                        let remainingDays = null;
+                        if (c.bitisTarihi) {
+                          const now = new Date();
+                          now.setHours(0,0,0,0);
+                          const end = new Date(c.bitisTarihi);
+                          end.setHours(0,0,0,0);
+                          remainingDays = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                        }
+
+                        let statusColor = 'var(--accent-lime)';
+                        let statusText = c.durum || 'AKTİF';
+                        if (c.durum === 'FESHEDİLDİ') {
+                          statusColor = '#94a3b8';
+                        } else if (remainingDays !== null && remainingDays < 0) {
+                          statusColor = 'var(--danger)';
+                          statusText = 'Süresi Doldu';
+                        } else if (remainingDays !== null && remainingDays <= 30) {
+                          statusColor = '#f59e0b';
+                          statusText = `${remainingDays} Gün Kaldı`;
+                        } else if (remainingDays !== null) {
+                          statusText = `${remainingDays} Gün Kaldı`;
+                        }
+
+                        return (
+                          <tr key={c.id}>
+                            <td style={{ fontWeight: 700, color: 'var(--primary-color)', padding: '0.6rem', fontSize: '0.82rem', wordBreak: 'break-word' }}>
+                              <div>{c.tesisAdi}</div>
+                              {c.yetkiliKisi && (
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                                  Yetkili: {c.yetkiliKisi} {c.telefon ? `(${c.telefon})` : ''}
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.8rem' }}>
+                              {fac ? `${fac.il || '-'}${fac.ilce ? ` / ${fac.ilce}` : ''}` : '-'}
+                            </td>
+                            <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.8rem' }}>
+                              {formatDateDisplay(c.sozlesmeTarihi)}
+                            </td>
+                            <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.8rem' }}>
+                              {formatDateDisplay(c.baslangicTarihi)}
+                            </td>
+                            <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.8rem' }}>
+                              {formatDateDisplay(c.bitisTarihi)}
+                            </td>
+                            <td style={{ padding: '0.6rem 0.5rem' }}>
+                              <span
+                                className="badge"
+                                style={{
+                                  backgroundColor: `${statusColor}22`,
+                                  color: statusColor,
+                                  border: `1px solid ${statusColor}66`,
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700
+                                }}
+                              >
+                                {statusText}
+                              </span>
+                            </td>
+                            <td style={{ padding: '0.6rem 0.5rem', fontSize: '0.8rem', fontWeight: 600 }}>
+                              {c.sozlesmeBedeli || '-'}
+                            </td>
+                            <td style={{ padding: '0.6rem 0.4rem', textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                className="btn btn-outline"
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.72rem' }}
+                                onClick={() => {
+                                  setActiveModalKey(null);
+                                  navigate('/contracts');
+                                }}
+                                title="Sözleşmeler Menüsünde İncele"
+                              >
+                                <ExternalLink size={12} /> Sözleşme
                               </button>
                             </td>
                           </tr>

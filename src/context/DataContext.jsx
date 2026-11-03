@@ -12,6 +12,7 @@ const DEFAULT_EMPLOYEES = [
 
 const FACILITIES_KEY = 'banja_saha_facilities_v4';
 const VISITS_KEY = 'banja_saha_visits_v4';
+const CONTRACTS_KEY = 'banja_saha_contracts_v1';
 const EMPLOYEES_KEY = 'banja_saha_employees_v3';
 const AUTH_KEY = 'banja_saha_auth_v1';
 
@@ -68,6 +69,11 @@ export const DataProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [contracts, setContracts] = useState(() => {
+    const saved = localStorage.getItem(CONTRACTS_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [employees, setEmployees] = useState(() => {
     const saved = localStorage.getItem(EMPLOYEES_KEY);
     return saved ? JSON.parse(saved) : DEFAULT_EMPLOYEES;
@@ -82,6 +88,10 @@ export const DataProvider = ({ children }) => {
   }, [visits]);
 
   useEffect(() => {
+    localStorage.setItem(CONTRACTS_KEY, JSON.stringify(contracts));
+  }, [contracts]);
+
+  useEffect(() => {
     localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(employees));
   }, [employees]);
 
@@ -92,23 +102,27 @@ export const DataProvider = ({ children }) => {
         const localFacRaw = JSON.parse(localStorage.getItem(FACILITIES_KEY) || '[]');
         const { cleaned: localFac } = cleanFacilitiesList(localFacRaw);
         const localVis = JSON.parse(localStorage.getItem(VISITS_KEY) || '[]');
+        const localCon = JSON.parse(localStorage.getItem(CONTRACTS_KEY) || '[]');
         const localEmp = JSON.parse(localStorage.getItem(EMPLOYEES_KEY) || '[]');
 
         // Bulut veritabanı henüz boşsa ve tarayıcıda yüklenmiş veri varsa buluta aktar
-        if (!res.initialized && (localFac.length > 0 || localVis.length > 0)) {
+        if (!res.initialized && (localFac.length > 0 || localVis.length > 0 || localCon.length > 0)) {
           await apiRequest('POST', {
             action: 'sync',
             facilities: localFac,
             visits: localVis,
+            contracts: localCon,
             employees: localEmp.length > 0 ? localEmp : DEFAULT_EMPLOYEES
           });
           setFacilities(localFac);
+          setContracts(localCon);
           setCloudStatus('synced');
         } else {
           const rawFac = Array.isArray(res.facilities) ? res.facilities : [];
           const { cleaned, changed } = cleanFacilitiesList(rawFac);
           setFacilities(cleaned);
           setVisits(Array.isArray(res.visits) ? res.visits : []);
+          setContracts(Array.isArray(res.contracts) ? res.contracts : []);
           if (Array.isArray(res.employees) && res.employees.length > 0) {
             setEmployees(res.employees);
           }
@@ -145,6 +159,7 @@ export const DataProvider = ({ children }) => {
       if (res.ok) {
         if (Array.isArray(res.facilities)) setFacilities(res.facilities);
         if (Array.isArray(res.visits)) setVisits(res.visits);
+        if (Array.isArray(res.contracts)) setContracts(res.contracts);
         if (Array.isArray(res.employees) && res.employees.length > 0) setEmployees(res.employees);
         setCloudStatus('synced');
       }
@@ -235,6 +250,7 @@ export const DataProvider = ({ children }) => {
   const deleteFacility = (id) => {
     setFacilities(prev => prev.filter(f => f.id !== id));
     setVisits(prev => prev.filter(v => v.facilityId !== id));
+    setContracts(prev => prev.filter(c => c.facilityId !== id));
     syncAction({ action: 'delete_facility', id });
   };
 
@@ -295,11 +311,44 @@ export const DataProvider = ({ children }) => {
     syncAction({ action: 'delete_visit', id });
   };
 
+  // --- Contracts (Sözleşmeli Tesisler & Sözleşmeler) ---
+  const addContract = (contract) => {
+    const newContract = {
+      ...contract,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    setContracts(prev => {
+      const next = [newContract, ...prev];
+      syncAction({ action: 'add_contract', contract: newContract });
+      return next;
+    });
+    return newContract;
+  };
+
+  const updateContract = (id, updatedData) => {
+    setContracts(prev => {
+      const next = prev.map(c => c.id === id ? { ...c, ...updatedData } : c);
+      syncAction({ action: 'update_contract', id, contract: updatedData });
+      return next;
+    });
+  };
+
+  const deleteContract = (id) => {
+    setContracts(prev => {
+      const next = prev.filter(c => c.id !== id);
+      syncAction({ action: 'delete_contract', id });
+      return next;
+    });
+  };
+
   const clearAllData = () => {
     setFacilities([]);
     setVisits([]);
+    setContracts([]);
     localStorage.removeItem(FACILITIES_KEY);
     localStorage.removeItem(VISITS_KEY);
+    localStorage.removeItem(CONTRACTS_KEY);
     syncAction({ action: 'reset_all' });
   };
 
@@ -339,6 +388,7 @@ export const DataProvider = ({ children }) => {
       cloudStatus, refreshCloudData,
       facilities, addFacility, bulkAddFacilities, updateFacility, deleteFacility,
       visits, addVisit, bulkAddVisits, updateVisit, deleteVisit,
+      contracts, addContract, updateContract, deleteContract,
       employees, addEmployee, updateEmployee, deleteEmployee,
       clearAllData
     }}>
